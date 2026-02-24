@@ -2,69 +2,108 @@
 
 import { createContext, useContext, useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
-import type { User, Session } from '@supabase/supabase-js'
+
+export type AuthUser = {
+  user_id: string
+  email: string
+  name: string
+  role: 'CLIENT' | 'DRIVER'
+}
 
 type AuthContextType = {
-  user: User | null
-  session: Session | null
+  user: AuthUser | null
   loading: boolean
-  signUp: (email: string, password: string) => Promise<any>
-  signIn: (email: string, password: string) => Promise<any>
-  signOut: () => Promise<void>
+  signIn: (email: string, password: string) => Promise<{ user?: AuthUser; error?: { message: string } }>
+  signUp: (email: string, password: string, name: string, role: 'CLIENT' | 'DRIVER') => Promise<{ user?: AuthUser; error?: { message: string } }>
+  signOut: () => void
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
 
+const SESSION_KEY = 'takura_user'
+
+function setSessionCookie(userId: string) {
+  document.cookie = `takura_user=${userId}; path=/; max-age=86400; SameSite=Lax`
+}
+
+function clearSessionCookie() {
+  document.cookie = 'takura_user=; path=/; max-age=0'
+}
+
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const [user, setUser] = useState<User | null>(null)
-  const [session, setSession] = useState<Session | null>(null)
+  const [user, setUser] = useState<AuthUser | null>(null)
   const [loading, setLoading] = useState(true)
-  const supabase = createClient()
 
   useEffect(() => {
-    if (!supabase) {
-      setLoading(false)
-      return
+    try {
+      const stored = localStorage.getItem(SESSION_KEY)
+      if (stored) setUser(JSON.parse(stored))
+    } catch {
+      localStorage.removeItem(SESSION_KEY)
     }
-
-    // Get initial session
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session)
-      setUser(session?.user ?? null)
-      setLoading(false)
-    })
-
-    // Listen for auth state changes
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, session) => {
-      setSession(session)
-      setUser(session?.user ?? null)
-      setLoading(false)
-    })
-
-    return () => subscription.unsubscribe()
+    setLoading(false)
   }, [])
 
-  const signUp = async (email: string, password: string) => {
-    if (!supabase) return { error: { message: 'Supabase not configured' } }
-    const result = await supabase.auth.signUp({ email, password })
-    return result
-  }
-
   const signIn = async (email: string, password: string) => {
-    if (!supabase) return { error: { message: 'Supabase not configured' } }
-    const result = await supabase.auth.signInWithPassword({ email, password })
-    return result
+    const supabase = createClient()
+    if (!supabase) return { error: { message: 'Database not available' } }
+
+    const { data, error } = await supabase
+      .from('users')
+      .select('user_id, email, name, role')
+      .eq('email', email)
+      .eq('password', password)
+      .maybeSingle()
+
+    if (error) return { error: { message: error.message } }
+    if (!data) return { error: { message: 'Invalid email or password' } }
+
+    const authUser = data as AuthUser
+    setUser(authUser)
+    localStorage.setItem(SESSION_KEY, JSON.stringify(authUser))
+    setSessionCookie(authUser.user_id)
+    return { user: authUser }
   }
 
-  const signOut = async () => {
-    if (!supabase) return
-    await supabase.auth.signOut()
+  const signUp = async (email: string, password: string, name: string, role: 'CLIENT' | 'DRIVER') => {
+    const supabase = createClient()
+    if (!supabase) return { error: { message: 'Database not available' } }
+
+    const { data: existing } = await supabase
+      .from('users')
+      .select('user_id')
+      .eq('email', email)
+      .maybeSingle()
+
+    if (existing) return { error: { message: 'An account with this email already exists' } }
+
+    const user_id = crypto.randomUUID()
+    const { error } = await supabase.from('users').insert({
+      user_id,
+      email,
+      password,
+      name,
+      role,
+      account_status: 'Active',
+    })
+
+    if (error) return { error: { message: error.message } }
+
+    const authUser: AuthUser = { user_id, email, name, role }
+    setUser(authUser)
+    localStorage.setItem(SESSION_KEY, JSON.stringify(authUser))
+    setSessionCookie(user_id)
+    return { user: authUser }
+  }
+
+  const signOut = () => {
+    setUser(null)
+    localStorage.removeItem(SESSION_KEY)
+    clearSessionCookie()
   }
 
   return (
-    <AuthContext.Provider value={{ user, session, loading, signUp, signIn, signOut }}>
+    <AuthContext.Provider value={{ user, loading, signIn, signUp, signOut }}>
       {children}
     </AuthContext.Provider>
   )

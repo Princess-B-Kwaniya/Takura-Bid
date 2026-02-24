@@ -12,8 +12,7 @@ export interface DbUser {
   user_id: string
   role: UserRole
   email: string
-  password_hash: string
-  salt: string
+  password: string
   name: string
   phone: string | null
   city: string | null
@@ -50,8 +49,8 @@ export interface DbUser {
   profile_clicks: number | null
 }
 
-/** Fields safe to expose client-side (excludes password_hash, salt) */
-export type SafeUser = Omit<DbUser, 'password_hash' | 'salt'>
+/** Fields safe to expose client-side (excludes password) */
+export type SafeUser = Omit<DbUser, 'password'>
 
 /** Convenience type for driver rows */
 export type Driver = SafeUser & { role: 'DRIVER' }

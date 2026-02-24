@@ -4,7 +4,6 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { useAuth } from '@/components/providers/AuthProvider'
-import { createClient } from '@/lib/supabase/client'
 import type { UserRole } from '@/lib/types/database'
 
 export default function SignupPage() {
@@ -35,41 +34,14 @@ export default function SignupPage() {
     setLoading(true)
 
     try {
-      const { data, error: authError } = await signUp(email, password)
+      const { user, error: authError } = await signUp(email, password, name, role)
 
       if (authError) {
         setError(authError.message)
-        setLoading(false)
         return
       }
 
-      // Create the user record in the users table
-      // data.user exists when email confirmation is off (immediate session)
-      // or when the user object is returned even before confirmation
-      const supabase = createClient()
-      if (supabase && data?.user) {
-        const { error: insertError } = await supabase.from('users').insert({
-          user_id: data.user.id,
-          role,
-          email,
-          name,
-          account_status: 'Pending Verification',
-        })
-
-        if (insertError) {
-          console.error('Error creating user record:', insertError)
-          // If RLS blocked the insert (email not confirmed yet), that's ok —
-          // a trigger or the user's first login can create the profile later.
-          if (insertError.code !== '42501') {
-            setError('Account created but profile setup failed. Please contact support.')
-            setLoading(false)
-            return
-          }
-        }
-      }
-
-      // Redirect to the appropriate portal
-      if (role === 'DRIVER') {
+      if (user?.role === 'DRIVER') {
         router.push('/driver')
       } else {
         router.push('/client')

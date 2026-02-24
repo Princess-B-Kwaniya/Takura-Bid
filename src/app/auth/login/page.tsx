@@ -4,7 +4,6 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { useAuth } from '@/components/providers/AuthProvider'
-import { createClient } from '@/lib/supabase/client'
 
 export default function LoginPage() {
   const [email, setEmail] = useState('')
@@ -20,36 +19,18 @@ export default function LoginPage() {
     setLoading(true)
 
     try {
-      const { error: authError } = await signIn(email, password)
+      const { user, error: authError } = await signIn(email, password)
 
       if (authError) {
         setError(authError.message)
-        setLoading(false)
         return
       }
 
-      // Get the user's role from the users table to redirect appropriately
-      const supabase = createClient()
-      if (supabase) {
-        const { data: { user } } = await supabase.auth.getUser()
-        if (user) {
-          const { data: dbUser } = await supabase
-            .from('users')
-            .select('role')
-            .eq('user_id', user.id)
-            .single()
-
-          if (dbUser?.role === 'DRIVER') {
-            router.push('/driver')
-          } else {
-            router.push('/client')
-          }
-          return
-        }
+      if (user?.role === 'DRIVER') {
+        router.push('/driver')
+      } else {
+        router.push('/client')
       }
-
-      // Default redirect
-      router.push('/client')
     } catch {
       setError('An unexpected error occurred')
     } finally {
@@ -135,6 +116,10 @@ export default function LoginPage() {
               )}
             </button>
           </form>
+
+          <p className="text-center text-xs text-gray-400 mt-6">
+            Sample login — use any sample email with password: <strong>password123</strong>
+          </p>
         </div>
 
         <p className="text-center text-sm text-gray-500 mt-6">

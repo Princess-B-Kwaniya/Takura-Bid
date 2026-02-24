@@ -1,11 +1,9 @@
 'use client'
 
-import { ReactNode, useEffect, useState } from 'react'
+import { ReactNode } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { createClient } from '@/lib/supabase/client'
-import { SAFE_USER_COLUMNS } from '@/lib/types/database'
-import type { SafeUser } from '@/lib/types/database'
+import { useAuth } from '@/components/providers/AuthProvider'
 
 interface SidebarProps {
   userType: 'driver' | 'client'
@@ -93,25 +91,7 @@ const clientNavItems: NavItem[] = [
 export function Sidebar({ userType }: SidebarProps) {
   const pathname = usePathname()
   const navItems = userType === 'driver' ? driverNavItems : clientNavItems
-  const [user, setUser] = useState<SafeUser | null>(null)
-
-  useEffect(() => {
-    const supabase = createClient()
-    if (!supabase) return
-
-    // Get the actual authenticated user
-    supabase.auth.getUser().then(({ data: { user: authUser } }) => {
-      if (!authUser) return
-      supabase
-        .from('users')
-        .select(SAFE_USER_COLUMNS)
-        .eq('user_id', authUser.id)
-        .single()
-        .then(({ data }) => {
-          if (data) setUser(data as SafeUser)
-        })
-    })
-  }, [userType])
+  const { user } = useAuth()
 
   const displayName = user?.name ?? (userType === 'driver' ? 'Driver' : 'Client')
   const initials = displayName.split(' ').map(n => n[0]).join('').toUpperCase()
@@ -138,8 +118,8 @@ export function Sidebar({ userType }: SidebarProps) {
           <ul className="nav-list">
             {navItems.map((item) => (
               <li key={item.href} className="nav-item">
-                <Link 
-                  href={item.href} 
+                <Link
+                  href={item.href}
                   className={`nav-link ${pathname === item.href ? 'active' : ''}`}
                 >
                   <span className="nav-icon">{item.icon}</span>
@@ -152,7 +132,7 @@ export function Sidebar({ userType }: SidebarProps) {
 
         {/* User Profile Section */}
         <div className="mt-auto pt-6 border-t border-gray-200">
-          <Link 
+          <Link
             href={userType === 'driver' ? '/driver/profile' : '/client/profile'}
             className="flex items-center space-x-3 p-4 rounded-lg bg-gray-50 hover:bg-gray-100 transition-colors cursor-pointer group"
           >

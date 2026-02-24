@@ -44,6 +44,8 @@ export default function SignupPage() {
       }
 
       // Create the user record in the users table
+      // data.user exists when email confirmation is off (immediate session)
+      // or when the user object is returned even before confirmation
       const supabase = createClient()
       if (supabase && data?.user) {
         const { error: insertError } = await supabase.from('users').insert({
@@ -51,16 +53,18 @@ export default function SignupPage() {
           role,
           email,
           name,
-          password_hash: 'managed_by_supabase_auth',
-          salt: 'managed_by_supabase_auth',
           account_status: 'Pending Verification',
         })
 
         if (insertError) {
           console.error('Error creating user record:', insertError)
-          setError('Account created but profile setup failed. Please contact support.')
-          setLoading(false)
-          return
+          // If RLS blocked the insert (email not confirmed yet), that's ok —
+          // a trigger or the user's first login can create the profile later.
+          if (insertError.code !== '42501') {
+            setError('Account created but profile setup failed. Please contact support.')
+            setLoading(false)
+            return
+          }
         }
       }
 

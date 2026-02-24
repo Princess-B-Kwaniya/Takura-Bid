@@ -10,6 +10,7 @@ export function DriverStats() {
 
   useEffect(() => {
     const supabase = createClient()
+    if (!supabase) return
     // TODO: Replace with authenticated user's ID once login is wired
     supabase
       .from('users')

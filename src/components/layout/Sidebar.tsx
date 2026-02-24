@@ -97,6 +97,7 @@ export function Sidebar({ userType }: SidebarProps) {
 
   useEffect(() => {
     const supabase = createClient()
+    if (!supabase) return
     // TODO: Replace with authenticated user's ID once login is wired
     const userId = userType === 'driver' ? 'USR-005' : 'USR-001'
     supabase

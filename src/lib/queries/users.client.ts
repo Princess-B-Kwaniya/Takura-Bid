@@ -8,6 +8,7 @@ import { SAFE_USER_COLUMNS, type Driver } from '@/lib/types/database'
  */
 export async function fetchDrivers(search?: string): Promise<Driver[]> {
   const supabase = createClient()
+  if (!supabase) return []
 
   let query = supabase
     .from('users')

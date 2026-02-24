@@ -6,6 +6,7 @@ import { SAFE_USER_COLUMNS, type SafeUser, type Driver, type Client } from '@/li
  */
 export async function getDrivers(availableOnly = false): Promise<Driver[]> {
   const supabase = await createClient()
+  if (!supabase) return []
 
   let query = supabase
     .from('users')
@@ -32,6 +33,7 @@ export async function getDrivers(availableOnly = false): Promise<Driver[]> {
  */
 export async function getClients(): Promise<Client[]> {
   const supabase = await createClient()
+  if (!supabase) return []
 
   const { data, error } = await supabase
     .from('users')
@@ -52,6 +54,7 @@ export async function getClients(): Promise<Client[]> {
  */
 export async function getUserById(userId: string): Promise<SafeUser | null> {
   const supabase = await createClient()
+  if (!supabase) return null
 
   const { data, error } = await supabase
     .from('users')
@@ -72,6 +75,7 @@ export async function getUserById(userId: string): Promise<SafeUser | null> {
  */
 export async function getUserByEmail(email: string): Promise<SafeUser | null> {
   const supabase = await createClient()
+  if (!supabase) return null
 
   const { data, error } = await supabase
     .from('users')
@@ -92,6 +96,7 @@ export async function getUserByEmail(email: string): Promise<SafeUser | null> {
  */
 export async function searchDriversBySkill(skill: string): Promise<Driver[]> {
   const supabase = await createClient()
+  if (!supabase) return []
 
   const { data, error } = await supabase
     .from('users')
@@ -113,6 +118,7 @@ export async function searchDriversBySkill(skill: string): Promise<Driver[]> {
  */
 export async function getTopDrivers(limit = 5): Promise<Driver[]> {
   const supabase = await createClient()
+  if (!supabase) return []
 
   const { data, error } = await supabase
     .from('users')

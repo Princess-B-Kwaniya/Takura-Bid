@@ -1,9 +1,1 @@
-{
-  "/_not-found/page": "app/_not-found/page.js",
-  "/driver/analytics/page": "app/driver/analytics/page.js",
-  "/driver/chat/page": "app/driver/chat/page.js",
-  "/driver/jobs/page": "app/driver/jobs/page.js",
-  "/driver/loads/page": "app/driver/loads/page.js",
-  "/driver/page": "app/driver/page.js",
-  "/page": "app/page.js"
-}
+{}

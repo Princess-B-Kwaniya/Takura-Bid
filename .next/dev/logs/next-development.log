@@ -1,9 +1,2 @@
-[00:00:02.096] Server  LOG     ✓ Ready in 1422ms
-[00:00:14.620] Server  LOG     ○ Compiling / ...
-[00:00:19.259] Browser INFO    %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold
-[00:00:34.128] Browser INFO    %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold
-[00:00:36.821] Browser INFO    %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold
-[00:09:11.372] Server  LOG     ✓ Compiled in 591ms
-[00:09:54.242] Browser INFO    %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold
-[00:09:58.772] Browser INFO    %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold
-[00:23:03.134] Server  LOG     ✓ Compiled in 290ms
+[00:00:01.597] Server  WARN    ⚠ The "middleware" file convention is deprecated. Please use "proxy" instead. Learn more: https://nextjs.org/docs/messages/middleware-to-proxy
+[00:00:01.822] Server  LOG     ✓ Ready in 1469ms

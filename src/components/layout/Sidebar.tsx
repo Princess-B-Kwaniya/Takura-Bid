@@ -1,8 +1,11 @@
 'use client'
 
-import { ReactNode } from 'react'
+import { ReactNode, useEffect, useState } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
+import { createClient } from '@/lib/supabase/client'
+import { SAFE_USER_COLUMNS } from '@/lib/types/database'
+import type { SafeUser } from '@/lib/types/database'
 
 interface SidebarProps {
   userType: 'driver' | 'client'
@@ -90,6 +93,24 @@ const clientNavItems: NavItem[] = [
 export function Sidebar({ userType }: SidebarProps) {
   const pathname = usePathname()
   const navItems = userType === 'driver' ? driverNavItems : clientNavItems
+  const [user, setUser] = useState<SafeUser | null>(null)
+
+  useEffect(() => {
+    const supabase = createClient()
+    // TODO: Replace with authenticated user's ID once login is wired
+    const userId = userType === 'driver' ? 'USR-005' : 'USR-001'
+    supabase
+      .from('users')
+      .select(SAFE_USER_COLUMNS)
+      .eq('user_id', userId)
+      .single()
+      .then(({ data }) => {
+        if (data) setUser(data as SafeUser)
+      })
+  }, [userType])
+
+  const displayName = user?.name ?? (userType === 'driver' ? 'Driver' : 'Client')
+  const initials = displayName.split(' ').map(n => n[0]).join('').toUpperCase()
 
   return (
     <aside className="sidebar">
@@ -132,11 +153,11 @@ export function Sidebar({ userType }: SidebarProps) {
             className="flex items-center space-x-3 p-4 rounded-lg bg-gray-50 hover:bg-gray-100 transition-colors cursor-pointer group"
           >
             <div className="w-10 h-10 bg-primary-900 rounded-full flex items-center justify-center text-white font-medium">
-              {userType === 'driver' ? 'T' : 'C'}
+              {initials}
             </div>
             <div className="flex-1">
               <p className="font-medium text-gray-900 group-hover:text-gray-700">
-                {userType === 'driver' ? 'Tendai Mukamuri' : 'Client User'}
+                {displayName}
               </p>
               <p className="text-sm text-gray-500 capitalize">{userType}</p>
             </div>

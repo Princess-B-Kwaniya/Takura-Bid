@@ -1,6 +1,18 @@
 import { DashboardLayout } from '@/components/layout/DashboardLayout'
+import { getUserById } from '@/lib/queries/users'
 
-export default function DriverAnalytics() {
+export default async function DriverAnalytics() {
+  // TODO: Replace with authenticated user's ID once login is wired
+  const driver = await getUserById('USR-005')
+
+  const totalEarnings = driver?.total_earnings_usd ?? 0
+  const avgRating = driver?.average_rating ?? 0
+  const totalKm = driver?.total_kilometres ?? 0
+  const ranking = driver?.driver_ranking ?? '—'
+  const profileViews = driver?.profile_views ?? 0
+  const profileClicks = driver?.profile_clicks ?? 0
+  const acceptanceRate = driver?.acceptance_rate_pct ?? 0
+
   return (
     <DashboardLayout userType="driver">
       <div className="content-area">
@@ -17,25 +29,25 @@ export default function DriverAnalytics() {
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 lg:gap-6 mb-6 lg:mb-8">
           <div className="card">
             <div className="card-content p-4 lg:p-6 text-center">
-              <div className="text-2xl lg:text-3xl font-bold text-gray-900 mb-2">$27,000</div>
+              <div className="text-2xl lg:text-3xl font-bold text-gray-900 mb-2">${totalEarnings.toLocaleString()}</div>
               <div className="text-xs lg:text-sm font-medium text-gray-600">Total Earnings</div>
             </div>
           </div>
           <div className="card">
             <div className="card-content p-4 lg:p-6 text-center">
-              <div className="text-2xl lg:text-3xl font-bold text-gray-900 mb-2">4.8</div>
+              <div className="text-2xl lg:text-3xl font-bold text-gray-900 mb-2">{avgRating}</div>
               <div className="text-xs lg:text-sm font-medium text-gray-600">Average Rating</div>
             </div>
           </div>
           <div className="card">
             <div className="card-content p-4 lg:p-6 text-center">
-              <div className="text-2xl lg:text-3xl font-bold text-gray-900 mb-2">45,200</div>
+              <div className="text-2xl lg:text-3xl font-bold text-gray-900 mb-2">{totalKm.toLocaleString()}</div>
               <div className="text-xs lg:text-sm font-medium text-gray-600">Total Kilometres</div>
             </div>
           </div>
           <div className="card">
             <div className="card-content p-4 lg:p-6 text-center">
-              <div className="text-2xl lg:text-3xl font-bold text-gray-900 mb-2">Top 5%</div>
+              <div className="text-2xl lg:text-3xl font-bold text-gray-900 mb-2">{ranking}</div>
               <div className="text-xs lg:text-sm font-medium text-gray-600">Top Rated Driver</div>
             </div>
           </div>
@@ -51,8 +63,8 @@ export default function DriverAnalytics() {
             <div className="p-6">
               <div className="mb-4">
                 <div className="flex justify-between items-center mb-2">
-                  <span className="text-sm text-gray-600">Total Views: 2,847</span>
-                  <span className="text-sm text-gray-600">Total Clicks: 892</span>
+                  <span className="text-sm text-gray-600">Total Views: {profileViews.toLocaleString()}</span>
+                  <span className="text-sm text-gray-600">Total Clicks: {profileClicks.toLocaleString()}</span>
                 </div>
               </div>
               <div className="h-64 bg-gray-50 rounded-lg p-4">
@@ -170,11 +182,11 @@ export default function DriverAnalytics() {
             <div className="p-6">
               <div className="grid grid-cols-2 gap-4 mb-4">
                 <div className="text-center">
-                  <div className="text-2xl font-bold text-green-600">28</div>
+                  <div className="text-2xl font-bold text-green-600">{acceptanceRate}%</div>
                   <div className="text-sm text-gray-600">Accepted</div>
                 </div>
                 <div className="text-center">
-                  <div className="text-2xl font-bold text-red-600">12</div>
+                  <div className="text-2xl font-bold text-red-600">{100 - acceptanceRate}%</div>
                   <div className="text-sm text-gray-600">Declined</div>
                 </div>
               </div>
@@ -185,18 +197,18 @@ export default function DriverAnalytics() {
                   <circle cx="100" cy="100" r="80" fill="transparent" stroke="#ef4444" strokeWidth="20" strokeDasharray="42 120" strokeDashoffset="-137" transform="rotate(-90 100 100)"/>
                   
                   {/* Center text */}
-                  <text x="100" y="95" textAnchor="middle" fontSize="20" fill="#374151" fontWeight="bold">70%</text>
+                  <text x="100" y="95" textAnchor="middle" fontSize="20" fill="#374151" fontWeight="bold">{acceptanceRate}%</text>
                   <text x="100" y="115" textAnchor="middle" fontSize="12" fill="#6b7280">Accepted</text>
                 </svg>
               </div>
               <div className="flex justify-center space-x-6 mt-4">
                 <div className="flex items-center space-x-2">
                   <div className="w-3 h-3 bg-green-500 rounded-full"></div>
-                  <span className="text-sm text-gray-600">Accepted (70%)</span>
+                  <span className="text-sm text-gray-600">Accepted ({acceptanceRate}%)</span>
                 </div>
                 <div className="flex items-center space-x-2">
                   <div className="w-3 h-3 bg-red-500 rounded-full"></div>
-                  <span className="text-sm text-gray-600">Declined (30%)</span>
+                  <span className="text-sm text-gray-600">Declined ({100 - acceptanceRate}%)</span>
                 </div>
               </div>
             </div>

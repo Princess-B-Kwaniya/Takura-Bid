@@ -1,6 +1,22 @@
 import { DashboardLayout } from '@/components/layout/DashboardLayout'
+import { getUserById } from '@/lib/queries/users'
 
-export default function ClientProfile() {
+export default async function ClientProfile() {
+  // TODO: Replace with authenticated user's ID once login is wired
+  const client = await getUserById('USR-001')
+
+  const name = client?.name ?? ''
+  const companyName = client?.company_name ?? ''
+  const initials = companyName.split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2)
+  const email = client?.email ?? ''
+  const phone = client?.phone ?? ''
+  const address = client?.address ? `${client.address}, ${client.city ?? ''}, Zimbabwe` : ''
+  const totalSpent = client?.total_spent_usd ?? 0
+  const paymentMethod = client?.payment_method_type ?? ''
+  const paymentVerified = client?.payment_verified ?? false
+  const createdAt = client?.created_at ? new Date(client.created_at) : null
+  const memberSince = createdAt ? createdAt.toLocaleDateString('en-US', { month: 'short', year: 'numeric' }) : '—'
+
   return (
     <DashboardLayout userType="client">
       <div className="content-area">
@@ -25,7 +41,7 @@ export default function ClientProfile() {
                 <div className="text-center">
                   <div className="relative inline-block">
                     <div className="w-24 h-24 bg-blue-600 rounded-lg flex items-center justify-center text-white text-2xl font-bold mx-auto mb-4">
-                      AL
+                      {initials}
                     </div>
                     <button className="absolute bottom-0 right-0 w-8 h-8 bg-gray-900 text-white rounded-full flex items-center justify-center hover:bg-gray-800 transition-colors">
                       <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -33,31 +49,25 @@ export default function ClientProfile() {
                       </svg>
                     </button>
                   </div>
-                  <h3 className="text-lg font-semibold text-gray-900 mb-1">ABC Logistics</h3>
+                  <h3 className="text-lg font-semibold text-gray-900 mb-1">{companyName}</h3>
                   <p className="text-sm text-gray-600 mb-2">Transport Company</p>
-                  <div className="flex items-center justify-center space-x-1 text-yellow-500 mb-4">
-                    <svg className="w-4 h-4 fill-current" viewBox="0 0 20 20">
-                      <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-                    </svg>
-                    <span className="text-sm font-medium text-gray-900">4.6</span>
-                    <span className="text-sm text-gray-600">(89 reviews)</span>
+                  <div className="flex items-center justify-center space-x-1 mb-4">
+                    {paymentVerified && (
+                      <span className="text-xs font-medium text-green-600 bg-green-50 px-2 py-1 rounded-full">Payment Verified</span>
+                    )}
                   </div>
                   <div className="text-center space-y-2">
                     <div className="flex items-center justify-between text-sm">
                       <span className="text-gray-600">Member since:</span>
-                      <span className="font-medium">Mar 2024</span>
+                      <span className="font-medium">{memberSince}</span>
                     </div>
                     <div className="flex items-center justify-between text-sm">
-                      <span className="text-gray-600">Total loads posted:</span>
-                      <span className="font-medium">78</span>
+                      <span className="text-gray-600">Total spent:</span>
+                      <span className="font-medium">${totalSpent.toLocaleString()}</span>
                     </div>
                     <div className="flex items-center justify-between text-sm">
-                      <span className="text-gray-600">Completion rate:</span>
-                      <span className="font-medium text-green-600">94%</span>
-                    </div>
-                    <div className="flex items-center justify-between text-sm">
-                      <span className="text-gray-600">Active loads:</span>
-                      <span className="font-medium text-blue-600">5</span>
+                      <span className="text-gray-600">Payment method:</span>
+                      <span className="font-medium text-blue-600">{paymentMethod}</span>
                     </div>
                   </div>
                 </div>
@@ -80,7 +90,7 @@ export default function ClientProfile() {
                     </label>
                     <input 
                       type="text" 
-                      defaultValue="ABC Logistics Ltd" 
+                      defaultValue={companyName} 
                       className="input-field"
                     />
                   </div>
@@ -90,7 +100,7 @@ export default function ClientProfile() {
                     </label>
                     <input 
                       type="text" 
-                      defaultValue="REG123456789" 
+                      defaultValue="" 
                       className="input-field"
                     />
                   </div>
@@ -135,7 +145,7 @@ export default function ClientProfile() {
                     </label>
                     <textarea 
                       rows={3}
-                      defaultValue="456 Industrial Road, Msasa, Harare, Zimbabwe" 
+                      defaultValue={address} 
                       className="input-field"
                     ></textarea>
                   </div>
@@ -167,7 +177,7 @@ export default function ClientProfile() {
                     </label>
                     <input 
                       type="text" 
-                      defaultValue="John Chivandire" 
+                      defaultValue={name} 
                       className="input-field"
                     />
                   </div>
@@ -187,7 +197,7 @@ export default function ClientProfile() {
                     </label>
                     <input 
                       type="email" 
-                      defaultValue="john@abclogistics.co.zw" 
+                      defaultValue={email} 
                       className="input-field"
                     />
                   </div>
@@ -197,7 +207,7 @@ export default function ClientProfile() {
                     </label>
                     <input 
                       type="tel" 
-                      defaultValue="+263 24 123 4567" 
+                      defaultValue={phone} 
                       className="input-field"
                     />
                   </div>

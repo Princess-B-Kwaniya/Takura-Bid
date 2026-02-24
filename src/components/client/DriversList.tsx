@@ -1,13 +1,15 @@
 'use client'
 
+import { useState, useEffect } from 'react'
+import { fetchDrivers } from '@/lib/queries/users.client'
+import type { Driver as DbDriver } from '@/lib/types/database'
+
 interface Driver {
   id: string
   name: string
   title: string
   country: string
-  hourlyRate: number
   rating: number
-  jobSuccess: number
   totalEarned: string
   available: boolean
   skills: string[]
@@ -15,86 +17,26 @@ interface Driver {
   image?: string
 }
 
-const mockDrivers: Driver[] = [
-  {
-    id: '1',
-    name: 'Tendai M.',
-    title: 'Expert Heavy Equipment Transport | Professional Long-Distance Driver',
-    country: 'Zimbabwe',
-    hourlyRate: 15,
-    rating: 4.8,
-    jobSuccess: 94,
-    totalEarned: '$33K+ earned',
-    available: true,
-    skills: ['Heavy Equipment', 'Long Distance', 'Flatbed Transport', 'Construction', 'Mining Equipment', '+3'],
-    description: 'Welcome! TRANSPORT EXPERT. Quick Response to invitations. Hi, I\'m Tendai Mukamuri an Expert Heavy Equipment Transport Driver. I have speciality in heavy equipment transport. I have delivered 250+ loads for multiple companies/clients. I have 8+ years...'
-  },
-  {
-    id: '2', 
-    name: 'Sarah C.',
-    title: 'Agricultural Transport Specialist | Cold Chain Expert',
-    country: 'Zimbabwe',
-    hourlyRate: 12,
-    rating: 4.9,
-    jobSuccess: 98,
-    totalEarned: '$45K+ earned',
-    available: true,
-    skills: ['Agricultural Products', 'Cold Chain', 'Refrigerated Transport', 'Food Safety', 'Livestock', '+4'],
-    description: 'Professional agricultural transport specialist with expertise in cold chain logistics. Certified in food safety protocols and livestock transport. Over 200 successful deliveries across Zimbabwe with zero incidents...'
-  },
-  {
-    id: '3',
-    name: 'James M.',
-    title: 'Construction Materials Transport | Mining Logistics Expert',
-    country: 'Zimbabwe', 
-    hourlyRate: 18,
-    rating: 4.7,
-    jobSuccess: 91,
-    totalEarned: '$28K+ earned',
-    available: false,
-    skills: ['Construction Materials', 'Mining Transport', 'Dump Truck', 'Hazardous Materials', 'Site Delivery', '+2'],
-    description: 'Experienced construction and mining transport specialist. Licensed for hazardous materials transport with advanced safety certifications. Reliable delivery to remote mining sites and construction projects...'
-  },
-  {
-    id: '4',
-    name: 'Grace M.',
-    title: 'General Freight Specialist | Cross-Border Transport Expert',
-    country: 'Zimbabwe',
-    hourlyRate: 14,
-    rating: 4.6,
-    jobSuccess: 89,
-    totalEarned: '$21K+ earned', 
-    available: true,
-    skills: ['General Freight', 'Cross Border', 'Import/Export', 'Documentation', 'Customs', '+5'],
-    description: 'Cross-border logistics expert specializing in import/export documentation and customs procedures. Fluent in multiple languages with extensive knowledge of SADC trade routes and regulations...'
-  },
-  {
-    id: '5',
-    name: 'Michael T.',
-    title: 'Liquid Transport Specialist | Fuel & Chemical Transport',
-    country: 'Zimbabwe',
-    hourlyRate: 20,
-    rating: 4.9,
-    jobSuccess: 96,
-    totalEarned: '$52K+ earned',
-    available: true,
-    skills: ['Liquid Transport', 'Fuel Delivery', 'Chemical Transport', 'Tanker Operations', 'Safety Protocols', '+3'],
-    description: 'Certified liquid transport specialist with advanced training in fuel and chemical delivery. ADR certified with spotless safety record. Specialized equipment for various liquid cargo types...'
-  },
-  {
-    id: '6',
-    name: 'Patricia N.',
-    title: 'Express Delivery Expert | Time-Sensitive Cargo Specialist',
-    country: 'Zimbabwe',
-    hourlyRate: 16,
-    rating: 4.8,
-    jobSuccess: 93,
-    totalEarned: '$38K+ earned',
-    available: true,
-    skills: ['Express Delivery', 'Time Sensitive', 'Medical Supplies', 'Emergency Transport', 'GPS Tracking', '+4'],
-    description: 'Express delivery specialist focusing on time-sensitive and medical cargo. Real-time GPS tracking and 24/7 communication. Perfect record for urgent deliveries including medical supplies and emergency equipment...'
+/** Map a Supabase driver row to our component's Driver shape */
+function mapDbDriver(d: DbDriver): Driver {
+  const earnings = d.total_earnings_usd ?? 0
+  const earnedLabel = earnings >= 1000
+    ? `$${Math.round(earnings / 1000)}K+ earned`
+    : `$${earnings} earned`
+
+  return {
+    id: d.user_id,
+    name: d.name,
+    title: d.title ?? '',
+    country: d.city ?? 'Zimbabwe',
+    rating: d.average_rating ?? 0,
+    totalEarned: earnedLabel,
+    available: d.availability === 'Available',
+    skills: d.skill_tags ? d.skill_tags.split(',').map(s => s.trim()) : [],
+    description: d.bio ?? '',
+    image: d.profile_picture_url ?? undefined,
   }
-]
+}
 
 interface DriverCardProps {
   driver: Driver
@@ -191,9 +133,23 @@ function DriverCard({ driver, onSelect }: DriverCardProps) {
 }
 
 export function DriversList() {
+  const [drivers, setDrivers] = useState<Driver[]>([])
+  const [search, setSearch] = useState('')
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    const timeout = setTimeout(() => {
+      setLoading(true)
+      fetchDrivers(search || undefined).then((data) => {
+        setDrivers(data.map(mapDbDriver))
+        setLoading(false)
+      })
+    }, 300) // debounce search
+    return () => clearTimeout(timeout)
+  }, [search])
+
   const handleSelectDriver = (driver: Driver) => {
     console.log('Selected driver:', driver)
-    // Handle driver selection logic here
   }
 
   return (
@@ -207,6 +163,8 @@ export function DriversList() {
           <input 
             type="text" 
             placeholder="Search by skills, location..." 
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
             className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent w-full sm:w-64"
           />
           <button className="btn-secondary whitespace-nowrap">
@@ -218,15 +176,21 @@ export function DriversList() {
         </div>
       </div>
 
-      <div className="space-y-4">
-        {mockDrivers.map((driver) => (
-          <DriverCard 
-            key={driver.id} 
-            driver={driver} 
-            onSelect={handleSelectDriver}
-          />
-        ))}
-      </div>
+      {loading ? (
+        <div className="text-center py-12 text-gray-500">Loading drivers...</div>
+      ) : drivers.length === 0 ? (
+        <div className="text-center py-12 text-gray-500">No drivers found.</div>
+      ) : (
+        <div className="space-y-4">
+          {drivers.map((driver) => (
+            <DriverCard 
+              key={driver.id} 
+              driver={driver} 
+              onSelect={handleSelectDriver}
+            />
+          ))}
+        </div>
+      )}
     </div>
   )
 }

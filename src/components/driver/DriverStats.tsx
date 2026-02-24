@@ -1,14 +1,34 @@
 'use client'
 
+import { useState, useEffect } from 'react'
+import { createClient } from '@/lib/supabase/client'
+import { SAFE_USER_COLUMNS } from '@/lib/types/database'
+import type { Driver } from '@/lib/types/database'
+
 export function DriverStats() {
+  const [driver, setDriver] = useState<Driver | null>(null)
+
+  useEffect(() => {
+    const supabase = createClient()
+    // TODO: Replace with authenticated user's ID once login is wired
+    supabase
+      .from('users')
+      .select(SAFE_USER_COLUMNS)
+      .eq('user_id', 'USR-005')
+      .single()
+      .then(({ data }) => {
+        if (data) setDriver(data as Driver)
+      })
+  }, [])
+
   const statsData = [
     {
       label: 'Total Earnings',
-      value: '$27,000',
+      value: driver ? `$${(driver.total_earnings_usd ?? 0).toLocaleString()}` : '—',
     },
     {
-      label: 'Average Rating', 
-      value: '4.8',
+      label: 'Average Rating',
+      value: driver ? String(driver.average_rating ?? 0) : '—',
     },
   ]
 

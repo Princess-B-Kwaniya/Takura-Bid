@@ -1,6 +1,8 @@
 import { DashboardLayout } from '@/components/layout/DashboardLayout'
 import { getUserById } from '@/lib/queries/users'
 
+export const dynamic = 'force-dynamic'
+
 export default async function ClientProfile() {
   // TODO: Replace with authenticated user's ID once login is wired
   const client = await getUserById('USR-001')

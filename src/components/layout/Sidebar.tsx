@@ -98,16 +98,19 @@ export function Sidebar({ userType }: SidebarProps) {
   useEffect(() => {
     const supabase = createClient()
     if (!supabase) return
-    // TODO: Replace with authenticated user's ID once login is wired
-    const userId = userType === 'driver' ? 'USR-005' : 'USR-001'
-    supabase
-      .from('users')
-      .select(SAFE_USER_COLUMNS)
-      .eq('user_id', userId)
-      .single()
-      .then(({ data }) => {
-        if (data) setUser(data as SafeUser)
-      })
+
+    // Get the actual authenticated user
+    supabase.auth.getUser().then(({ data: { user: authUser } }) => {
+      if (!authUser) return
+      supabase
+        .from('users')
+        .select(SAFE_USER_COLUMNS)
+        .eq('user_id', authUser.id)
+        .single()
+        .then(({ data }) => {
+          if (data) setUser(data as SafeUser)
+        })
+    })
   }, [userType])
 
   const displayName = user?.name ?? (userType === 'driver' ? 'Driver' : 'Client')

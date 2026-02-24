@@ -24,11 +24,11 @@ export default function HomePage() {
           </div>
           
           <nav className="hidden md:flex items-center space-x-8">
-            <Link href="/driver" className="text-sm font-medium text-gray-600 hover:text-[#3f2a52] transition-colors">
-              Driver Portal
+            <Link href="/auth/login" className="text-sm font-medium text-gray-600 hover:text-[#3f2a52] transition-colors">
+              Sign In
             </Link>
-            <Link href="/client" className="text-sm font-medium text-gray-600 hover:text-[#3f2a52] transition-colors">
-              Client Portal
+            <Link href="/auth/signup" className="text-sm font-medium text-white bg-[#3f2a52] px-5 py-2 rounded-full hover:bg-[#3f2a52]/90 transition-colors shadow-[0_4px_15px_rgba(63,42,82,0.25)]">
+              Get Started
             </Link>
           </nav>
 
@@ -49,18 +49,18 @@ export default function HomePage() {
        <div className={`fixed inset-0 z-40 bg-white/90 backdrop-blur-xl transition-transform duration-300 md:hidden ${isMobileMenuOpen ? 'translate-x-0' : 'translate-x-full'}`}>
         <div className="flex flex-col items-center justify-center h-full space-y-8">
           <Link 
-            href="/driver" 
+            href="/auth/login" 
             onClick={() => setIsMobileMenuOpen(false)}
             className="text-2xl font-bold text-gray-900 hover:text-[#3f2a52] transition-colors"
           >
-            Driver Portal
+            Sign In
           </Link>
           <Link 
-            href="/client" 
+            href="/auth/signup" 
             onClick={() => setIsMobileMenuOpen(false)}
             className="text-2xl font-bold text-gray-900 hover:text-[#3f2a52] transition-colors"
           >
-            Client Portal
+            Get Started
           </Link>
         </div>
       </div>
@@ -89,7 +89,7 @@ export default function HomePage() {
             
             <div className="grid md:grid-cols-2 gap-6 w-full max-w-3xl">
               <Link 
-                href="/client"
+                href="/auth/signup"
                 className="group relative overflow-hidden bg-white p-8 rounded-2xl border border-gray-100 shadow-[0_4px_20px_rgb(0,0,0,0.03)] hover:shadow-[0_10px_40px_rgba(63,42,82,0.15)] hover:border-[#3f2a52]/20 transition-all duration-300"
               >
                 <div className="absolute inset-0 bg-gradient-to-br from-transparent to-gray-50 opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
@@ -108,7 +108,7 @@ export default function HomePage() {
               </Link>
               
               <Link 
-                href="/driver"
+                href="/auth/signup"
                 className="group relative overflow-hidden bg-[#3f2a52] p-8 rounded-2xl shadow-[0_10px_40px_rgba(63,42,82,0.25)] hover:shadow-[0_20px_50px_rgba(63,42,82,0.35)] hover:-translate-y-1 transition-all duration-300"
               >
                 <div className="absolute top-0 right-0 w-64 h-64 bg-white/5 rounded-full blur-3xl -mr-32 -mt-32 pointer-events-none"></div>

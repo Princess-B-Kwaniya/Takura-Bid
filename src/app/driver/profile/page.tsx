@@ -1,11 +1,10 @@
 import { DashboardLayout } from '@/components/layout/DashboardLayout'
-import { getUserById } from '@/lib/queries/users'
+import { getCurrentUser } from '@/lib/queries/auth'
 
 export const dynamic = 'force-dynamic'
 
 export default async function DriverProfile() {
-  // TODO: Replace with authenticated user's ID once login is wired
-  const driver = await getUserById('USR-005')
+  const driver = await getCurrentUser()
 
   const name = driver?.name ?? ''
   const nameParts = name.split(' ')
@@ -146,8 +145,9 @@ export default async function DriverProfile() {
                     </label>
                     <input 
                       type="text" 
-                      defaultValue="DL12345678" 
+                      defaultValue="" 
                       className="input-field"
+                      placeholder="Enter license number"
                     />
                   </div>
                   <div>
@@ -156,7 +156,7 @@ export default async function DriverProfile() {
                     </label>
                     <input 
                       type="date" 
-                      defaultValue="2026-12-31" 
+                      defaultValue="" 
                       className="input-field"
                     />
                   </div>
@@ -188,8 +188,9 @@ export default async function DriverProfile() {
                     </label>
                     <input 
                       type="text" 
-                      defaultValue="Isuzu NPR 400" 
+                      defaultValue="" 
                       className="input-field"
+                      placeholder="e.g. Isuzu NPR 400"
                     />
                   </div>
                   <div>
@@ -198,8 +199,9 @@ export default async function DriverProfile() {
                     </label>
                     <input 
                       type="text" 
-                      defaultValue="2019" 
+                      defaultValue="" 
                       className="input-field"
+                      placeholder="e.g. 2019"
                     />
                   </div>
                   <div>
@@ -208,8 +210,9 @@ export default async function DriverProfile() {
                     </label>
                     <input 
                       type="text" 
-                      defaultValue="ABC-1234" 
+                      defaultValue="" 
                       className="input-field"
+                      placeholder="e.g. ABC-1234"
                     />
                   </div>
                   <div>
@@ -218,8 +221,9 @@ export default async function DriverProfile() {
                     </label>
                     <input 
                       type="number" 
-                      defaultValue="7" 
+                      defaultValue="" 
                       className="input-field"
+                      placeholder="e.g. 7"
                     />
                   </div>
                   <div>
@@ -228,7 +232,7 @@ export default async function DriverProfile() {
                     </label>
                     <input 
                       type="date" 
-                      defaultValue="2025-08-15" 
+                      defaultValue="" 
                       className="input-field"
                     />
                   </div>
@@ -261,8 +265,9 @@ export default async function DriverProfile() {
                     </label>
                     <input 
                       type="number" 
-                      defaultValue="8" 
+                      defaultValue="" 
                       className="input-field"
+                      placeholder="e.g. 5"
                     />
                   </div>
                   <div>
@@ -272,8 +277,9 @@ export default async function DriverProfile() {
                     <input 
                       type="number" 
                       step="0.01"
-                      defaultValue="1.85" 
+                      defaultValue="" 
                       className="input-field"
+                      placeholder="e.g. 1.85"
                     />
                   </div>
                 </div>
@@ -294,7 +300,7 @@ export default async function DriverProfile() {
                       <label key={specialization} className="flex items-center">
                         <input 
                           type="checkbox" 
-                          defaultChecked={['General Freight', 'Fragile Items'].includes(specialization)}
+                          defaultChecked={skillTags.includes(specialization)}
                           className="rounded border-gray-300 text-purple-600 focus:ring-purple-500 mr-2"
                         />
                         <span className="text-sm text-gray-700">{specialization}</span>

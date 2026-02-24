@@ -21,88 +21,8 @@ interface Load {
   tripType: 'One Way' | 'Round Trip'
 }
 
-const mockLoads: Load[] = [
-  {
-    id: 'LOAD001',
-    origin: 'Harare',
-    destination: 'Bulawayo',
-    loadType: 'Building Materials',
-    weight: '5 tons',
-    rate: 850,
-    distance: '439 km',
-    pickupDate: '2026-01-26',
-    deliveryDate: '2026-01-27',
-    urgent: false,
-    client: 'ABC Construction',
-    description: 'Transport of construction materials including cement, steel rods, and tiles for a commercial building project. Delivery must be completed within 24 hours.',
-    requirements: ['Flatbed Truck', 'Crane Loading', 'Insurance Required'],
-    clientRating: 4.8,
-    clientSpent: '$15.2K',
-    bidsCount: 3,
-    postedTime: '2 hours ago',
-    tripType: 'One Way'
-  },
-  {
-    id: 'LOAD002',
-    origin: 'Gweru',
-    destination: 'Mutare',
-    loadType: 'Agricultural Products',
-    weight: '8 tons',
-    rate: 1200,
-    distance: '520 km',
-    pickupDate: '2026-01-25',
-    deliveryDate: '2026-01-26',
-    urgent: true,
-    client: 'Farm Fresh Zimbabwe',
-    description: 'Urgent transport of fresh produce including vegetables and fruits for retail distribution. Temperature-controlled transport required.',
-    requirements: ['Refrigerated Truck', 'Fresh Produce', 'Fast Delivery'],
-    clientRating: 4.9,
-    clientSpent: '$28.5K',
-    bidsCount: 1,
-    postedTime: '30 minutes ago',
-    tripType: 'Round Trip'
-  },
-  {
-    id: 'LOAD003',
-    origin: 'Bulawayo',
-    destination: 'Victoria Falls',
-    loadType: 'Tourism Equipment',
-    weight: '3 tons',
-    rate: 650,
-    distance: '440 km',
-    pickupDate: '2026-01-27',
-    deliveryDate: '2026-01-28',
-    urgent: false,
-    client: 'Safari Lodge Group',
-    description: 'Transport of luxury safari equipment and furniture for new lodge setup. Careful handling required for expensive items.',
-    requirements: ['Covered Transport', 'Careful Handling', 'Lodge Equipment'],
-    clientRating: 4.7,
-    clientSpent: '$8.9K',
-    bidsCount: 7,
-    postedTime: '4 hours ago',
-    tripType: 'One Way'
-  },
-  {
-    id: 'LOAD004',
-    origin: 'Chinhoyi',
-    destination: 'Kariba',
-    loadType: 'Mining Equipment',
-    weight: '12 tons',
-    rate: 1800,
-    distance: '180 km',
-    pickupDate: '2026-01-26',
-    deliveryDate: '2026-01-26',
-    urgent: true,
-    client: 'Zimbabwe Mining Corp',
-    description: 'Heavy mining equipment transport for urgent operations. Specialized low-loader required. Must be delivered same day.',
-    requirements: ['Low-Loader', 'Heavy Equipment', 'Mining Transport', 'Same Day'],
-    clientRating: 4.6,
-    clientSpent: '$45.3K',
-    bidsCount: 2,
-    postedTime: '1 hour ago',
-    tripType: 'Round Trip'
-  },
-]
+// Data will come from the database once loads table is created
+const loads: Load[] = []
 
 function LoadListItem({ load }: { load: Load }) {
   return (
@@ -245,32 +165,44 @@ export default function LoadBoard() {
         {/* Quick Stats */}
         <div className="stats-grid">
           <div className="stat-card">
-            <div className="stat-value">{mockLoads.length}</div>
+            <div className="stat-value">{loads.length}</div>
             <div className="stat-label">Available Loads</div>
           </div>
           
           <div className="stat-card">
-            <div className="stat-value">{mockLoads.filter(load => load.urgent).length}</div>
+            <div className="stat-value">{loads.filter(load => load.urgent).length}</div>
             <div className="stat-label">Urgent Loads</div>
           </div>
           
           <div className="stat-card">
-            <div className="stat-value">${Math.round(mockLoads.reduce((sum, load) => sum + load.rate, 0) / mockLoads.length)}</div>
+            <div className="stat-value">{loads.length > 0 ? `$${Math.round(loads.reduce((sum, load) => sum + load.rate, 0) / loads.length)}` : '$0'}</div>
             <div className="stat-label">Avg. Rate</div>
           </div>
           
           <div className="stat-card">
-            <div className="stat-value">3</div>
+            <div className="stat-value">0</div>
             <div className="stat-label">My Bids</div>
           </div>
         </div>
 
         {/* Load List */}
-        <div className="space-y-0">
-          {mockLoads.map((load) => (
-            <LoadListItem key={load.id} load={load} />
-          ))}
-        </div>
+        {loads.length > 0 ? (
+          <div className="space-y-0">
+            {loads.map((load) => (
+              <LoadListItem key={load.id} load={load} />
+            ))}
+          </div>
+        ) : (
+          <div className="card">
+            <div className="card-content p-12 text-center">
+              <svg className="w-16 h-16 text-gray-300 mx-auto mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" />
+              </svg>
+              <h3 className="text-lg font-semibold text-gray-900 mb-2">No loads available yet</h3>
+              <p className="text-gray-500 text-sm">When clients post loads, they will appear here for you to bid on.</p>
+            </div>
+          </div>
+        )}
       </div>
     </DashboardLayout>
   )

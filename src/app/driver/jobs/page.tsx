@@ -15,74 +15,7 @@ interface Job {
   progress?: number
 }
 
-const mockJobs: Job[] = [
-  {
-    id: 'JOB001',
-    origin: 'Harare',
-    destination: 'Bulawayo',
-    loadType: 'Building Materials',
-    weight: '5 tons',
-    rate: 850,
-    status: 'in_transit',
-    distance: '439 km',
-    pickupDate: '2026-01-25',
-    deliveryDate: '2026-01-27',
-    client: 'ABC Construction',
-    progress: 65
-  },
-  {
-    id: 'JOB002',
-    origin: 'Gweru',
-    destination: 'Mutare',
-    loadType: 'Agricultural Products',
-    weight: '8 tons',
-    rate: 1200,
-    status: 'completed',
-    distance: '520 km',
-    pickupDate: '2026-01-20',
-    deliveryDate: '2026-01-22',
-    client: 'Farm Fresh Zimbabwe'
-  },
-  {
-    id: 'JOB003',
-    origin: 'Masvingo',
-    destination: 'Harare',
-    loadType: 'Consumer Goods',
-    weight: '3.5 tons',
-    rate: 650,
-    status: 'pending',
-    distance: '292 km',
-    pickupDate: '2026-01-28',
-    deliveryDate: '2026-01-29',
-    client: 'Retail Plus Zimbabwe'
-  },
-  {
-    id: 'JOB004',
-    origin: 'Chinhoyi',
-    destination: 'Kariba',
-    loadType: 'Mining Equipment',
-    weight: '12 tons',
-    rate: 1800,
-    status: 'completed',
-    distance: '180 km',
-    pickupDate: '2026-01-18',
-    deliveryDate: '2026-01-19',
-    client: 'Zimbabwe Mining Corp'
-  },
-  {
-    id: 'JOB005',
-    origin: 'Bulawayo',
-    destination: 'Victoria Falls',
-    loadType: 'Tourism Equipment',
-    weight: '4 tons',
-    rate: 750,
-    status: 'active',
-    distance: '440 km',
-    pickupDate: '2026-01-26',
-    deliveryDate: '2026-01-28',
-    client: 'Safari Lodge Group'
-  }
-]
+const mockJobs: Job[] = []
 
 function getStatusBadge(status: Job['status']) {
   switch (status) {
@@ -248,19 +181,23 @@ export default function MyJobs() {
               {/* Upcoming Jobs Summary */}
               <div className="space-y-3">
                 <h3 className="font-semibold text-gray-900 mb-3">Upcoming Jobs</h3>
-                {upcomingJobs.slice(0, 3).map((job) => (
-                  <div key={job.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                    <div>
-                      <p className="font-medium text-sm">{job.origin} → {job.destination}</p>
-                      <p className="text-xs text-gray-600">{new Date(job.pickupDate).toLocaleDateString()} • {job.distance}</p>
-                      <p className="text-xs text-gray-500">Est. Duration: {Math.ceil(parseInt(job.distance) / 80)}h</p>
+                {upcomingJobs.length > 0 ? (
+                  upcomingJobs.slice(0, 3).map((job) => (
+                    <div key={job.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                      <div>
+                        <p className="font-medium text-sm">{job.origin} → {job.destination}</p>
+                        <p className="text-xs text-gray-600">{new Date(job.pickupDate).toLocaleDateString()} • {job.distance}</p>
+                        <p className="text-xs text-gray-500">Est. Duration: {Math.ceil(parseInt(job.distance) / 80)}h</p>
+                      </div>
+                      <div className="text-right">
+                        <span className="text-sm font-bold text-gray-900">${job.rate}</span>
+                        {getStatusBadge(job.status)}
+                      </div>
                     </div>
-                    <div className="text-right">
-                      <span className="text-sm font-bold text-gray-900">${job.rate}</span>
-                      {getStatusBadge(job.status)}
-                    </div>
-                  </div>
-                ))}
+                  ))
+                ) : (
+                  <p className="text-sm text-gray-500 p-3 bg-gray-50 rounded-lg text-center">No upcoming jobs yet</p>
+                )}
               </div>
             </div>
           </div>
@@ -319,14 +256,7 @@ export default function MyJobs() {
               {/* Route Optimization */}
               <div className="mt-4 space-y-2">
                 <h3 className="font-semibold text-gray-900">Optimized Route Suggestions</h3>
-                <div className="text-sm space-y-1">
-                  <p className="text-gray-600">• Start: Harare → Bulawayo (439km, 5.5h)</p>
-                  <p className="text-gray-600">• Continue: Bulawayo → Victoria Falls (440km, 5.5h)</p>
-                  <p className="text-gray-600">• Return: Victoria Falls → Harare via Gweru (520km, 6.5h)</p>
-                  <div className="mt-2 p-2 bg-green-50 rounded text-green-800">
-                    <p className="font-medium">Total Distance: 1,399km • Est. Time: 17.5h • Fuel Savings: 15%</p>
-                  </div>
-                </div>
+                <p className="text-sm text-gray-500">Route suggestions will appear when you have active jobs.</p>
               </div>
             </div>
           </div>
@@ -337,11 +267,21 @@ export default function MyJobs() {
           <div className="card-header">
             <h2 className="card-title">Your Jobs Timeline</h2>
           </div>
-          <div className="space-y-0">
-            {sortedJobs.map((job) => (
-              <JobListItem key={job.id} job={job} />
-            ))}
-          </div>
+          {sortedJobs.length > 0 ? (
+            <div className="space-y-0">
+              {sortedJobs.map((job) => (
+                <JobListItem key={job.id} job={job} />
+              ))}
+            </div>
+          ) : (
+            <div className="p-12 text-center">
+              <svg className="w-16 h-16 text-gray-300 mx-auto mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
+              </svg>
+              <h3 className="text-lg font-semibold text-gray-900 mb-2">No jobs yet</h3>
+              <p className="text-gray-500 text-sm">Your accepted jobs will appear here. Start by bidding on loads from the Load Board.</p>
+            </div>
+          )}
         </div>
       </div>
     </DashboardLayout>

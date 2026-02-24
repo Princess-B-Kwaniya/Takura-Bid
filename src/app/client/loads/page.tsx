@@ -17,67 +17,7 @@ interface Load {
   createdDate: string
 }
 
-const mockLoads: Load[] = [
-  {
-    id: 'LOAD001',
-    origin: 'Harare',
-    destination: 'Bulawayo',
-    loadType: 'Building Materials',
-    weight: '5 tons',
-    rate: 850,
-    status: 'in_transit',
-    distance: '439 km',
-    pickupDate: '2026-01-25',
-    deliveryDate: '2026-01-27',
-    assignedDriver: 'Tendai Mukamuri',
-    bidsCount: 5,
-    createdDate: '2026-01-20'
-  },
-  {
-    id: 'LOAD002',
-    origin: 'Gweru',
-    destination: 'Mutare',
-    loadType: 'Agricultural Products',
-    weight: '8 tons',
-    rate: 1200,
-    status: 'completed',
-    distance: '520 km',
-    pickupDate: '2026-01-20',
-    deliveryDate: '2026-01-22',
-    assignedDriver: 'James Mwangi',
-    bidsCount: 8,
-    createdDate: '2026-01-18'
-  },
-  {
-    id: 'LOAD003',
-    origin: 'Masvingo',
-    destination: 'Harare',
-    loadType: 'Consumer Goods',
-    weight: '3.5 tons',
-    rate: 650,
-    status: 'in_bidding',
-    distance: '292 km',
-    pickupDate: '2026-01-28',
-    deliveryDate: '2026-01-29',
-    bidsCount: 3,
-    createdDate: '2026-01-25'
-  },
-  {
-    id: 'LOAD004',
-    origin: 'Bulawayo',
-    destination: 'Victoria Falls',
-    loadType: 'Tourism Equipment',
-    weight: '4 tons',
-    rate: 750,
-    status: 'assigned',
-    distance: '440 km',
-    pickupDate: '2026-01-26',
-    deliveryDate: '2026-01-28',
-    assignedDriver: 'Peter Chikwanha',
-    bidsCount: 6,
-    createdDate: '2026-01-23'
-  }
-]
+const mockLoads: Load[] = []
 
 function getStatusBadge(status: Load['status']) {
   switch (status) {
@@ -283,11 +223,27 @@ export default function MyLoads() {
           <div className="px-6 py-4 border-b border-gray-200">
             <h2 className="text-lg font-semibold text-gray-900">All Loads</h2>
           </div>
-          <div className="divide-y divide-gray-200">
-            {mockLoads.map((load) => (
-              <LoadListItem key={load.id} load={load} />
-            ))}
-          </div>
+          {mockLoads.length > 0 ? (
+            <div className="divide-y divide-gray-200">
+              {mockLoads.map((load) => (
+                <LoadListItem key={load.id} load={load} />
+              ))}
+            </div>
+          ) : (
+            <div className="p-12 text-center">
+              <svg className="w-16 h-16 text-gray-300 mx-auto mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" />
+              </svg>
+              <h3 className="text-lg font-semibold text-gray-900 mb-2">No loads posted yet</h3>
+              <p className="text-gray-500 text-sm mb-4">Post your first load to start receiving bids from drivers.</p>
+              <Link href="/client/post-load" className="btn-primary inline-flex items-center">
+                <svg className="w-4 h-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                </svg>
+                Post New Load
+              </Link>
+            </div>
+          )}
         </div>
       </div>
     </DashboardLayout>

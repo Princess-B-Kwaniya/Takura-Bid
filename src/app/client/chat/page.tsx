@@ -23,88 +23,7 @@ interface Conversation {
   messages: ChatMessage[]
 }
 
-const mockConversations: Conversation[] = [
-  {
-    id: 'conv1',
-    driverName: 'Tendai Mukamuri',
-    driverAvatar: 'TM',
-    lastMessage: 'I can pick up tomorrow morning at 8 AM',
-    lastMessageTime: '10:35 AM',
-    unreadCount: 1,
-    isOnline: true,
-    jobId: 'JOB001',
-    messages: [
-      {
-        id: 'msg1',
-        sender: 'client',
-        message: 'Hello! I saw you placed a bid on our load from Harare to Bulawayo.',
-        timestamp: '09:45 AM',
-        read: true
-      },
-      {
-        id: 'msg2',
-        sender: 'driver',
-        message: 'Hi! Yes, I\'m very interested in this job. I have experience with building materials transport.',
-        timestamp: '09:48 AM',
-        read: true
-      },
-      {
-        id: 'msg3',
-        sender: 'client',
-        message: 'Great! Can you tell me more about your truck specifications?',
-        timestamp: '10:15 AM',
-        read: true
-      },
-      {
-        id: 'msg4',
-        sender: 'driver',
-        message: 'I have a 10-ton capacity truck with all necessary equipment for safe transport.',
-        timestamp: '10:18 AM',
-        read: true
-      },
-      {
-        id: 'msg5',
-        sender: 'client',
-        message: 'When can you pick up the load?',
-        timestamp: '10:30 AM',
-        read: true
-      },
-      {
-        id: 'msg6',
-        sender: 'driver',
-        message: 'I can pick up tomorrow morning at 8 AM',
-        timestamp: '10:35 AM',
-        read: false
-      }
-    ]
-  },
-  {
-    id: 'conv2',
-    driverName: 'James Mwangi',
-    driverAvatar: 'JM',
-    lastMessage: 'Thank you for choosing our service!',
-    lastMessageTime: 'Yesterday',
-    unreadCount: 0,
-    isOnline: false,
-    jobId: 'JOB002',
-    messages: [
-      {
-        id: 'msg7',
-        sender: 'client',
-        message: 'The delivery was completed perfectly. Thank you for the excellent service!',
-        timestamp: 'Yesterday 4:30 PM',
-        read: true
-      },
-      {
-        id: 'msg8',
-        sender: 'driver',
-        message: 'Thank you for choosing our service! It was a pleasure working with you.',
-        timestamp: 'Yesterday 4:35 PM',
-        read: true
-      }
-    ]
-  }
-]
+const mockConversations: Conversation[] = []
 
 function ConversationList({ conversations, selectedConversation, onSelectConversation }: {
   conversations: Conversation[]
@@ -117,7 +36,7 @@ function ConversationList({ conversations, selectedConversation, onSelectConvers
         <h2 className="card-title">Messages</h2>
       </div>
       <div className="flex-1 overflow-y-auto">
-        {conversations.map((conversation) => (
+        {conversations.length > 0 ? conversations.map((conversation) => (
           <div
             key={conversation.id}
             onClick={() => onSelectConversation(conversation.id)}
@@ -153,7 +72,15 @@ function ConversationList({ conversations, selectedConversation, onSelectConvers
               </div>
             </div>
           </div>
-        ))}
+        )) : (
+          <div className="p-8 text-center">
+            <svg className="w-12 h-12 text-gray-300 mx-auto mb-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+            </svg>
+            <h4 className="text-sm font-semibold text-gray-900 mb-1">No conversations yet</h4>
+            <p className="text-xs text-gray-500">Messages from drivers will appear here.</p>
+          </div>
+        )}
       </div>
     </div>
   )

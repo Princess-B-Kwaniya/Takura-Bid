@@ -1,11 +1,10 @@
 import { DashboardLayout } from '@/components/layout/DashboardLayout'
-import { getUserById } from '@/lib/queries/users'
+import { getCurrentUser } from '@/lib/queries/auth'
 
 export const dynamic = 'force-dynamic'
 
 export default async function ClientProfile() {
-  // TODO: Replace with authenticated user's ID once login is wired
-  const client = await getUserById('USR-001')
+  const client = await getCurrentUser()
 
   const name = client?.name ?? ''
   const companyName = client?.company_name ?? ''
@@ -112,8 +111,9 @@ export default async function ClientProfile() {
                     </label>
                     <input 
                       type="text" 
-                      defaultValue="VAT987654321" 
+                      defaultValue="" 
                       className="input-field"
+                      placeholder="Enter VAT number"
                     />
                   </div>
                   <div>
@@ -157,7 +157,7 @@ export default async function ClientProfile() {
                     </label>
                     <textarea 
                       rows={4}
-                      defaultValue="ABC Logistics is a leading freight and logistics company in Zimbabwe, specializing in reliable transportation solutions for businesses across various industries. We pride ourselves on timely deliveries and excellent customer service."
+                      defaultValue=""
                       className="input-field"
                       placeholder="Describe your company and services..."
                     ></textarea>
@@ -189,8 +189,9 @@ export default async function ClientProfile() {
                     </label>
                     <input 
                       type="text" 
-                      defaultValue="Operations Manager" 
+                      defaultValue="" 
                       className="input-field"
+                      placeholder="Enter job title"
                     />
                   </div>
                   <div>
@@ -219,8 +220,9 @@ export default async function ClientProfile() {
                     </label>
                     <input 
                       type="tel" 
-                      defaultValue="+263 77 987 6543" 
+                      defaultValue="" 
                       className="input-field"
+                      placeholder="Enter alternative phone"
                     />
                   </div>
                   <div>
@@ -229,7 +231,7 @@ export default async function ClientProfile() {
                     </label>
                     <input 
                       type="url" 
-                      defaultValue="https://abclogistics.co.zw" 
+                      defaultValue="" 
                       className="input-field"
                       placeholder="https://example.com"
                     />
@@ -251,7 +253,7 @@ export default async function ClientProfile() {
                     </label>
                     <textarea 
                       rows={3}
-                      defaultValue="456 Industrial Road, Msasa, Harare, Zimbabwe" 
+                      defaultValue="" 
                       className="input-field"
                       placeholder="Same as company address"
                     ></textarea>
@@ -273,8 +275,9 @@ export default async function ClientProfile() {
                     </label>
                     <input 
                       type="number" 
-                      defaultValue="5000" 
+                      defaultValue="" 
                       className="input-field"
+                      placeholder="0"
                     />
                   </div>
                   <div>
@@ -328,7 +331,7 @@ export default async function ClientProfile() {
                       <label key={type} className="flex items-center">
                         <input 
                           type="checkbox" 
-                          defaultChecked={['General Cargo', 'Electronics', 'Furniture'].includes(type)}
+                          defaultChecked={false}
                           className="rounded border-gray-300 text-blue-600 focus:ring-blue-500 mr-2"
                         />
                         <span className="text-sm text-gray-700">{type}</span>

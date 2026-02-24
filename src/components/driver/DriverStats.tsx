@@ -11,15 +11,18 @@ export function DriverStats() {
   useEffect(() => {
     const supabase = createClient()
     if (!supabase) return
-    // TODO: Replace with authenticated user's ID once login is wired
-    supabase
-      .from('users')
-      .select(SAFE_USER_COLUMNS)
-      .eq('user_id', 'USR-005')
-      .single()
-      .then(({ data }) => {
-        if (data) setDriver(data as Driver)
-      })
+    
+    async function fetchDriver() {
+      const { data: { user } } = await supabase!.auth.getUser()
+      if (!user) return
+      const { data } = await supabase!
+        .from('users')
+        .select(SAFE_USER_COLUMNS)
+        .eq('user_id', user.id)
+        .single()
+      if (data) setDriver(data as Driver)
+    }
+    fetchDriver()
   }, [])
 
   const statsData = [

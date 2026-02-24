@@ -23,6 +23,8 @@
   },
   "homepage": "https://github.com/Nqobileee/Takura-Bid#readme",
   "dependencies": {
+    "@supabase/ssr": "^0.8.0",
+    "@supabase/supabase-js": "^2.97.0",
     "@types/node": "^25.0.10",
     "@types/react": "^19.2.9",
     "@types/react-dom": "^19.2.3",

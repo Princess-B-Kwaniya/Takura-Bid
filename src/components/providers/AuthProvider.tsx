@@ -37,7 +37,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     try {
       const stored = localStorage.getItem(SESSION_KEY)
-      if (stored) setUser(JSON.parse(stored))
+      if (stored) {
+        const parsed = JSON.parse(stored) as AuthUser
+        setUser(parsed)
+        // Re-set the cookie on every page load so server-side API routes stay authenticated
+        setSessionCookie(parsed.user_id)
+      }
     } catch {
       localStorage.removeItem(SESSION_KEY)
     }

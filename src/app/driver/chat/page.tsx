@@ -38,18 +38,20 @@ interface Message {
 }
 
 export default function DriverChat() {
-  const { user } = useAuth()
+  const { user, loading: authLoading } = useAuth()
   const [conversations, setConversations] = useState<Conversation[]>([])
   const [selected, setSelected] = useState<Conversation | null>(null)
   const [messages, setMessages] = useState<Message[]>([])
   const [text, setText] = useState('')
   const [sending, setSending] = useState(false)
+  const [sendError, setSendError] = useState('')
   const [loadingConvs, setLoadingConvs] = useState(true)
   const [loadingMsgs, setLoadingMsgs] = useState(false)
   const bottomRef = useRef<HTMLDivElement>(null)
 
-  // Fetch both job conversations and DM conversations
+  // Wait for auth to finish before fetching so the cookie is guaranteed to be set
   useEffect(() => {
+    if (authLoading) return
     async function loadConversations() {
       try {
         const [jobRes, dmRes] = await Promise.all([
@@ -74,7 +76,7 @@ export default function DriverChat() {
       setLoadingConvs(false)
     }
     loadConversations()
-  }, [])
+  }, [authLoading])
 
   // Fetch messages when a conversation is selected
   useEffect(() => {
@@ -99,6 +101,7 @@ export default function DriverChat() {
     e.preventDefault()
     if (!text.trim() || !selected || !user) return
     setSending(true)
+    setSendError('')
 
     let url: string
     let body: Record<string, string>
@@ -123,6 +126,8 @@ export default function DriverChat() {
     if (res.ok) {
       setMessages(prev => [...prev, data.message])
       setText('')
+    } else {
+      setSendError(data.error ?? 'Failed to send message')
     }
   }
 
@@ -261,6 +266,14 @@ export default function DriverChat() {
                   )}
                   <div ref={bottomRef} />
                 </div>
+
+                {/* Send error */}
+                {sendError && (
+                  <div className="px-4 py-2 bg-red-50 border-t border-red-100 text-xs text-red-600 flex items-center justify-between">
+                    <span>{sendError}</span>
+                    <button onClick={() => setSendError('')} className="text-red-400 hover:text-red-600 ml-2">✕</button>
+                  </div>
+                )}
 
                 {/* Input */}
                 <form onSubmit={sendMessage} className="p-4 border-t border-gray-200 flex items-center space-x-3">

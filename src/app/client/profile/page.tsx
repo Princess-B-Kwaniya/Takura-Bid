@@ -1,35 +1,68 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { DashboardLayout } from '@/components/layout/DashboardLayout'
-import { useAuth } from '@/components/providers/AuthProvider'
+
+interface ProfileData {
+  user_id: string
+  email: string
+  name: string
+  role: string
+  company_name: string | null
+  phone: string | null
+  city: string | null
+  address: string | null
+  total_spent_usd: number
+  payment_method_type: string | null
+  payment_verified: boolean
+  created_at: string
+}
 
 export default function ClientProfile() {
-  const { user } = useAuth()
+  const [profile, setProfile] = useState<ProfileData | null>(null)
+  const [loadingProfile, setLoadingProfile] = useState(true)
 
-  const [name, setName] = useState(user?.name ?? '')
-  const [companyName, setCompanyName] = useState(user?.company_name ?? '')
-  const [phone, setPhone] = useState(user?.phone ?? '')
-  const [city, setCity] = useState(user?.city ?? '')
-  const [address, setAddress] = useState(user?.address ?? '')
+  const [name, setName] = useState('')
+  const [companyName, setCompanyName] = useState('')
+  const [phone, setPhone] = useState('')
+  const [city, setCity] = useState('')
+  const [address, setAddress] = useState('')
 
   const [saving, setSaving] = useState(false)
   const [saved, setSaved] = useState(false)
   const [showPreview, setShowPreview] = useState(false)
   const [error, setError] = useState('')
 
-  const email = user?.email ?? ''
-  const totalSpent = user?.total_spent_usd ?? 0
-  const paymentVerified = user?.payment_verified ?? false
-  const paymentMethod = user?.payment_method_type ?? ''
-  const createdAt = user?.created_at ? new Date(user.created_at) : null
+  useEffect(() => {
+    fetch('/api/users/profile')
+      .then(r => r.json())
+      .then(d => {
+        if (d.user) {
+          const u: ProfileData = d.user
+          setProfile(u)
+          setName(u.name ?? '')
+          setCompanyName(u.company_name ?? '')
+          setPhone(u.phone ?? '')
+          setCity(u.city ?? '')
+          setAddress(u.address ?? '')
+        }
+        setLoadingProfile(false)
+      })
+      .catch(() => setLoadingProfile(false))
+  }, [])
+
+  const email = profile?.email ?? ''
+  const totalSpent = profile?.total_spent_usd ?? 0
+  const paymentVerified = profile?.payment_verified ?? false
+  const paymentMethod = profile?.payment_method_type ?? ''
+  const createdAt = profile?.created_at ? new Date(profile.created_at) : null
   const memberSince = createdAt
     ? createdAt.toLocaleDateString('en-US', { month: 'short', year: 'numeric' })
     : '—'
 
   const initials = companyName
     .split(' ')
-    .map((w: string) => w[0])
+    .map(w => w[0])
     .join('')
     .toUpperCase()
     .slice(0, 2) || '??'
@@ -55,6 +88,16 @@ export default function ClientProfile() {
       const d = await res.json()
       setError(d.error ?? 'Failed to save profile.')
     }
+  }
+
+  if (loadingProfile) {
+    return (
+      <DashboardLayout userType="client">
+        <div className="content-area flex items-center justify-center py-24">
+          <p className="text-gray-400 text-sm">Loading profile...</p>
+        </div>
+      </DashboardLayout>
+    )
   }
 
   return (
@@ -97,7 +140,7 @@ export default function ClientProfile() {
 
         <form id="profile-form" onSubmit={handleSave}>
           <div className="grid lg:grid-cols-3 gap-6">
-            {/* Left column: avatar card */}
+            {/* Left column: avatar card + preview */}
             <div className="lg:col-span-1 space-y-6">
               <div className="card">
                 <div className="card-content p-6">

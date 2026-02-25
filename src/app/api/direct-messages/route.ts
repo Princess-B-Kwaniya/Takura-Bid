@@ -33,14 +33,16 @@ export async function POST(req: NextRequest) {
     if (error) return NextResponse.json({ error: error.message }, { status: 500 })
 
     // Best-effort notification — ignore errors if table doesn't exist
-    supabase.from('notifications').insert({
-        user_id: recipientId,
-        title: 'New Message',
-        body: `${user.company_name ?? user.name} sent you a message`,
-        type: 'message',
-        read: false,
-        reference_id: user.user_id,
-    }).then(() => {}).catch(() => {})
+    void Promise.resolve(
+        supabase.from('notifications').insert({
+            user_id: recipientId,
+            title: 'New Message',
+            body: `${user.company_name ?? user.name} sent you a message`,
+            type: 'message',
+            read: false,
+            reference_id: user.user_id,
+        })
+    ).catch(() => {})
 
     return NextResponse.json({ message: data })
 }

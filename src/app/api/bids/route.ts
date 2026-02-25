@@ -1,9 +1,23 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
-import { getCurrentUser } from '@/lib/queries/auth'
 
 export async function POST(req: NextRequest) {
-  const user = await getCurrentUser()
+  // Read cookie directly from request (same source as middleware)
+  const userId = req.cookies.get('takura_user')?.value
+  if (!userId) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  }
+
+  const supabase = await createClient()
+  if (!supabase) return NextResponse.json({ error: 'DB unavailable' }, { status: 500 })
+
+  // Verify the user exists and is a driver
+  const { data: user } = await supabase
+    .from('users')
+    .select('user_id, role')
+    .eq('user_id', userId)
+    .single()
+
   if (!user || user.role !== 'DRIVER') {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
@@ -12,9 +26,6 @@ export async function POST(req: NextRequest) {
   if (!loadId || !amount) {
     return NextResponse.json({ error: 'loadId and amount are required' }, { status: 400 })
   }
-
-  const supabase = await createClient()
-  if (!supabase) return NextResponse.json({ error: 'DB unavailable' }, { status: 500 })
 
   // Check load is still open
   const { data: load } = await supabase.from('loads').select('status').eq('load_id', loadId).single()
@@ -34,11 +45,10 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'You have already applied to this load' }, { status: 409 })
   }
 
-  const bid_id = `BID${Date.now()}`
-
+  // bid_id is UUID PRIMARY KEY DEFAULT gen_random_uuid() — let the DB generate it
   const { data, error } = await supabase
     .from('bids')
-    .insert({ bid_id, load_id: loadId, driver_id: user.user_id, amount_usd: amount, message, status: 'Pending' })
+    .insert({ load_id: loadId, driver_id: user.user_id, amount_usd: amount, message, status: 'Pending' })
     .select()
     .single()
 

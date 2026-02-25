@@ -8,7 +8,7 @@ import { getCurrentUser } from '@/lib/queries/auth'
  * Body: { driverId, loadId, rateUsd, message? }
  */
 export async function POST(req: NextRequest) {
-    const user = await getCurrentUser()
+    const user = await getCurrentUser(req)
     if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     if (user.role !== 'CLIENT') return NextResponse.json({ error: 'Only clients can send job offers' }, { status: 403 })
 

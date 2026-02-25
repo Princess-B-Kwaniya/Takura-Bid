@@ -7,10 +7,10 @@ import { getCurrentUser } from '@/lib/queries/auth'
  * Get all DMs between the current user and a specific recipient.
  */
 export async function GET(
-    _req: NextRequest,
+    req: NextRequest,
     { params }: { params: Promise<{ recipientId: string }> }
 ) {
-    const user = await getCurrentUser()
+    const user = await getCurrentUser(req)
     if (!user) return NextResponse.json({ messages: [] })
 
     const { recipientId } = await params

@@ -3,10 +3,10 @@ import { getCurrentUser } from '@/lib/queries/auth'
 import { getJobMessages } from '@/lib/queries/loads'
 
 export async function GET(
-  _req: NextRequest,
+  req: NextRequest,
   { params }: { params: Promise<{ jobId: string }> }
 ) {
-  const user = await getCurrentUser()
+  const user = await getCurrentUser(req)
   if (!user) return NextResponse.json({ messages: [] })
 
   const { jobId } = await params

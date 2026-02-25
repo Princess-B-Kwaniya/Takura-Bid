@@ -3,7 +3,7 @@ import { createClient } from '@/lib/supabase/server'
 import { getCurrentUser } from '@/lib/queries/auth'
 
 export async function GET(req: NextRequest) {
-  const user = await getCurrentUser()
+  const user = await getCurrentUser(req)
   if (!user || user.role !== 'DRIVER') {
     return NextResponse.json({ bid: null })
   }

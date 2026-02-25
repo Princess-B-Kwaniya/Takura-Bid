@@ -8,7 +8,7 @@ import { getCurrentUser } from '@/lib/queries/auth'
  * Body: { recipientId, content }
  */
 export async function POST(req: NextRequest) {
-    const user = await getCurrentUser()
+    const user = await getCurrentUser(req)
     if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
     const { recipientId, content } = await req.json()
@@ -52,8 +52,8 @@ export async function POST(req: NextRequest) {
  * List all DM conversations for the current user.
  * Returns a list of unique conversation partners with the latest message.
  */
-export async function GET() {
-    const user = await getCurrentUser()
+export async function GET(req: NextRequest) {
+    const user = await getCurrentUser(req)
     if (!user) return NextResponse.json({ conversations: [] })
 
     const supabase = await createClient()

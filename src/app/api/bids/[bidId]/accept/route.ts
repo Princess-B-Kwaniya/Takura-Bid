@@ -3,10 +3,10 @@ import { createClient } from '@/lib/supabase/server'
 import { getCurrentUser } from '@/lib/queries/auth'
 
 export async function POST(
-  _req: NextRequest,
+  req: NextRequest,
   { params }: { params: Promise<{ bidId: string }> }
 ) {
-  const user = await getCurrentUser()
+  const user = await getCurrentUser(req)
   if (!user || user.role !== 'CLIENT') {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }

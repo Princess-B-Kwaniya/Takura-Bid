@@ -5,21 +5,24 @@ export async function POST(req: NextRequest) {
   // Read cookie directly from request (same source as middleware)
   const userId = req.cookies.get('takura_user')?.value
   if (!userId) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    return NextResponse.json({ error: 'Not signed in' }, { status: 401 })
   }
 
   const supabase = await createClient()
   if (!supabase) return NextResponse.json({ error: 'DB unavailable' }, { status: 500 })
 
   // Verify the user exists and is a driver
-  const { data: user } = await supabase
+  const { data: user, error: userErr } = await supabase
     .from('users')
     .select('user_id, role')
     .eq('user_id', userId)
     .single()
 
-  if (!user || user.role !== 'DRIVER') {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  if (userErr || !user) {
+    return NextResponse.json({ error: 'User account not found — please sign out and sign in again' }, { status: 401 })
+  }
+  if (user.role !== 'DRIVER') {
+    return NextResponse.json({ error: 'Only drivers can apply to loads' }, { status: 403 })
   }
 
   const { loadId, amount, message } = await req.json()
@@ -45,10 +48,12 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'You have already applied to this load' }, { status: 409 })
   }
 
-  // bid_id is UUID PRIMARY KEY DEFAULT gen_random_uuid() — let the DB generate it
+  // Generate bid_id explicitly rather than relying on DB default
+  const bid_id = crypto.randomUUID()
+
   const { data, error } = await supabase
     .from('bids')
-    .insert({ load_id: loadId, driver_id: user.user_id, amount_usd: amount, message, status: 'Pending' })
+    .insert({ bid_id, load_id: loadId, driver_id: user.user_id, amount_usd: amount, message, status: 'Pending' })
     .select()
     .single()
 

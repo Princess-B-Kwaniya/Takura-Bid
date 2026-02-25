@@ -1,229 +1,266 @@
+'use client'
+
 import { DashboardLayout } from '@/components/layout/DashboardLayout'
-import { getCurrentUser } from '@/lib/queries/auth'
 
-export const dynamic = 'force-dynamic'
+/* ─── Sample data from SRS ─── */
+const KPI = {
+  earnings: 27000,
+  rating: 4.8,
+  distance: 45200,
+  ranking: 'Top 5%',
+}
 
-export default async function DriverAnalytics() {
-  const driver = await getCurrentUser()
+const WEEKLY_EARNINGS = [
+  { week: 'W1', amount: 5500 },
+  { week: 'W2', amount: 6200 },
+  { week: 'W3', amount: 7800 },
+  { week: 'W4', amount: 7500 },
+]
 
-  const totalEarnings = driver?.total_earnings_usd ?? 0
-  const avgRating = driver?.average_rating ?? 0
-  const totalKm = driver?.total_kilometres ?? 0
-  const ranking = driver?.driver_ranking ?? '—'
-  const profileViews = driver?.profile_views ?? 0
-  const profileClicks = driver?.profile_clicks ?? 0
-  const acceptanceRate = driver?.acceptance_rate_pct ?? 0
+const PROFILE_VIEWS = [
+  { month: 'Oct', views: 420, clicks: 120 },
+  { month: 'Nov', views: 580, clicks: 165 },
+  { month: 'Dec', views: 650, clicks: 210 },
+  { month: 'Jan', views: 720, clicks: 230 },
+  { month: 'Feb', views: 477, clicks: 167 },
+]
+
+const ACCEPTANCE = { accepted: 70, declined: 30 }
+
+const TIME_SPLIT = [
+  { label: 'Week 1', driving: 38, idle: 10 },
+  { label: 'Week 2', driving: 40, idle: 8 },
+  { label: 'Week 3', driving: 42, idle: 6 },
+  { label: 'Week 4', driving: 36, idle: 8 },
+]
+
+const MILES_PAY = [
+  { km: 200, pay: 2.3 },
+  { km: 350, pay: 2.1 },
+  { km: 439, pay: 1.95 },
+  { km: 500, pay: 1.8 },
+  { km: 650, pay: 1.75 },
+  { km: 879, pay: 1.6 },
+]
+
+export default function DriverAnalytics() {
+  const maxEarnings = Math.max(...WEEKLY_EARNINGS.map(w => w.amount))
+  const maxViews = Math.max(...PROFILE_VIEWS.map(p => p.views))
+  const totalTime = TIME_SPLIT.reduce((s, t) => s + t.driving + t.idle, 0)
+  const totalDriving = TIME_SPLIT.reduce((s, t) => s + t.driving, 0)
 
   return (
     <DashboardLayout userType="driver">
       <div className="content-area">
-        {/* Page Header */}
         <div className="page-header">
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
+          <h1 className="page-title">Analytics Dashboard</h1>
+          <p className="page-subtitle">Track your performance, earnings, and career growth</p>
+        </div>
+
+        {/* KPI Cards */}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+          {[
+            { label: 'Total Earnings', value: `$${KPI.earnings.toLocaleString()}`, icon: '💰', sub: 'This quarter' },
+            { label: 'Average Rating', value: KPI.rating.toFixed(1), icon: '⭐', sub: 'Out of 5.0' },
+            { label: 'Distance Covered', value: `${(KPI.distance / 1000).toFixed(1)}k km`, icon: '🛣️', sub: 'This quarter' },
+            { label: 'Driver Ranking', value: KPI.ranking, icon: '🏆', sub: 'Among all drivers' },
+          ].map(k => (
+            <div key={k.label} className="bg-white rounded-xl border border-gray-200 p-5">
+              <span className="text-2xl">{k.icon}</span>
+              <p className="text-2xl font-bold text-gray-900 mt-2 mb-1">{k.value}</p>
+              <p className="text-sm text-gray-600">{k.label}</p>
+              <p className="text-xs text-gray-400 mt-1">{k.sub}</p>
+            </div>
+          ))}
+        </div>
+
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+          {/* Profile Views & Clicks — Dual Line Chart */}
+          <div className="bg-white rounded-xl border border-gray-200 p-6">
+            <h3 className="text-base font-semibold text-gray-900 mb-1">Profile Views & Clicks</h3>
+            <p className="text-sm text-gray-500 mb-4">Total: 2,847 views &bull; 892 clicks</p>
+            <svg viewBox="0 0 400 200" className="w-full h-52">
+              {/* Grid */}
+              {[40, 80, 120, 160].map(y => (
+                <line key={y} x1="30" y1={y} x2="390" y2={y} stroke="#f3f4f6" strokeWidth="1" />
+              ))}
+              {/* Views line */}
+              <polyline
+                fill="none" stroke="#3f2a52" strokeWidth="2.5" strokeLinejoin="round" strokeLinecap="round"
+                points={PROFILE_VIEWS.map((p, i) => {
+                  const x = 50 + (i / (PROFILE_VIEWS.length - 1)) * 330
+                  const y = 190 - (p.views / maxViews) * 160
+                  return `${x},${y}`
+                }).join(' ')}
+              />
+              {/* Clicks line */}
+              <polyline
+                fill="none" stroke="#f59e0b" strokeWidth="2.5" strokeLinejoin="round" strokeLinecap="round"
+                points={PROFILE_VIEWS.map((p, i) => {
+                  const x = 50 + (i / (PROFILE_VIEWS.length - 1)) * 330
+                  const y = 190 - (p.clicks / maxViews) * 160
+                  return `${x},${y}`
+                }).join(' ')}
+              />
+              {/* Dots */}
+              {PROFILE_VIEWS.map((p, i) => {
+                const x = 50 + (i / (PROFILE_VIEWS.length - 1)) * 330
+                return (
+                  <g key={i}>
+                    <circle cx={x} cy={190 - (p.views / maxViews) * 160} r="4" fill="#3f2a52" />
+                    <circle cx={x} cy={190 - (p.clicks / maxViews) * 160} r="4" fill="#f59e0b" />
+                  </g>
+                )
+              })}
+            </svg>
+            <div className="flex justify-between mt-2 text-xs text-gray-500 px-4">
+              {PROFILE_VIEWS.map(p => <span key={p.month}>{p.month}</span>)}
+            </div>
+            <div className="flex items-center justify-center space-x-6 mt-3">
+              <div className="flex items-center space-x-2">
+                <div className="w-3 h-3 rounded-full bg-[#3f2a52]" />
+                <span className="text-xs text-gray-600">Views</span>
+              </div>
+              <div className="flex items-center space-x-2">
+                <div className="w-3 h-3 rounded-full bg-[#f59e0b]" />
+                <span className="text-xs text-gray-600">Clicks</span>
+              </div>
+            </div>
+          </div>
+
+          {/* Weekly Earnings — Bar Chart */}
+          <div className="bg-white rounded-xl border border-gray-200 p-6">
+            <h3 className="text-base font-semibold text-gray-900 mb-1">Weekly Earnings</h3>
+            <p className="text-sm text-gray-500 mb-4">Total: $27,000 this quarter</p>
+            <div className="flex items-end justify-between h-52 px-4">
+              {WEEKLY_EARNINGS.map(w => (
+                <div key={w.week} className="flex flex-col items-center flex-1 mx-2">
+                  <span className="text-xs font-semibold text-gray-700 mb-1">${(w.amount / 1000).toFixed(1)}k</span>
+                  <div className="w-full max-w-14 relative" style={{ height: `${(w.amount / maxEarnings) * 170}px` }}>
+                    <div
+                      className="absolute bottom-0 w-full rounded-t-lg"
+                      style={{ height: '100%', background: 'linear-gradient(to top, #3f2a52, #8b6fb0)' }}
+                    />
+                  </div>
+                  <span className="text-xs text-gray-500 mt-2">{w.week}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Acceptance Rate — Donut Chart */}
+          <div className="bg-white rounded-xl border border-gray-200 p-6">
+            <h3 className="text-base font-semibold text-gray-900 mb-1">Load Acceptance Rate</h3>
+            <p className="text-sm text-gray-500 mb-4">Accepted vs Declined</p>
+            <div className="flex items-center justify-center">
+              <div className="relative w-48 h-48">
+                <svg viewBox="0 0 42 42" className="w-full h-full">
+                  <circle cx="21" cy="21" r="15.915" fill="none" stroke="#e5e7eb" strokeWidth="4" />
+                  <circle
+                    cx="21" cy="21" r="15.915"
+                    fill="none"
+                    stroke="#3f2a52"
+                    strokeWidth="4"
+                    strokeDasharray={`${ACCEPTANCE.accepted} ${100 - ACCEPTANCE.accepted}`}
+                    strokeDashoffset="25"
+                    strokeLinecap="round"
+                  />
+                </svg>
+                <div className="absolute inset-0 flex flex-col items-center justify-center">
+                  <span className="text-3xl font-bold text-gray-900">{ACCEPTANCE.accepted}%</span>
+                  <span className="text-sm text-gray-500">Accepted</span>
+                </div>
+              </div>
+            </div>
+            <div className="flex items-center justify-center space-x-8 mt-4">
+              <div className="flex items-center space-x-2">
+                <div className="w-3 h-3 rounded-full bg-[#3f2a52]" />
+                <span className="text-sm text-gray-600">Accepted ({ACCEPTANCE.accepted}%)</span>
+              </div>
+              <div className="flex items-center space-x-2">
+                <div className="w-3 h-3 rounded-full bg-gray-200" />
+                <span className="text-sm text-gray-600">Declined ({ACCEPTANCE.declined}%)</span>
+              </div>
+            </div>
+          </div>
+
+          {/* Pay Per Mile — Scatter Plot */}
+          <div className="bg-white rounded-xl border border-gray-200 p-6">
+            <h3 className="text-base font-semibold text-gray-900 mb-1">Pay Per Mile Analysis</h3>
+            <p className="text-sm text-gray-500 mb-4">$/mile vs distance traveled</p>
+            <svg viewBox="0 0 400 250" className="w-full h-52">
+              {[60, 110, 160].map(y => (
+                <line key={y} x1="40" y1={y} x2="390" y2={y} stroke="#f3f4f6" strokeWidth="1" />
+              ))}
+              {/* Trend line */}
+              <line x1="50" y1="50" x2="380" y2="180" stroke="#3f2a52" strokeWidth="1.5" strokeDasharray="6,3" opacity="0.3" />
+              {/* Y-axis */}
+              <text x="5" y="65" fontSize="9" fill="#9ca3af">$2.3</text>
+              <text x="5" y="120" fontSize="9" fill="#9ca3af">$1.9</text>
+              <text x="5" y="175" fontSize="9" fill="#9ca3af">$1.6</text>
+              {/* X-axis */}
+              <text x="50" y="230" fontSize="9" fill="#9ca3af">200km</text>
+              <text x="200" y="230" fontSize="9" fill="#9ca3af">500km</text>
+              <text x="350" y="230" fontSize="9" fill="#9ca3af">900km</text>
+              {/* Points */}
+              {MILES_PAY.map((p, i) => {
+                const x = 40 + ((p.km - 150) / 750) * 350
+                const y = 210 - ((p.pay - 1.4) / 1.0) * 170
+                return (
+                  <g key={i}>
+                    <circle cx={x} cy={y} r="7" fill="#3f2a52" opacity="0.7" />
+                    <circle cx={x} cy={y} r="3" fill="white" />
+                  </g>
+                )
+              })}
+            </svg>
+          </div>
+        </div>
+
+        {/* Driving vs Idle Time — Stacked Bar Chart */}
+        <div className="bg-white rounded-xl border border-gray-200 p-6">
+          <div className="flex items-center justify-between mb-4">
             <div>
-              <h1 className="page-title">Analytics</h1>
-              <p className="page-subtitle">Track your performance metrics and insights.</p>
+              <h3 className="text-base font-semibold text-gray-900">Driving vs Idle Time</h3>
+              <p className="text-sm text-gray-500">Efficiency: {Math.round((totalDriving / totalTime) * 100)}% &bull; {totalDriving}h driving / {totalTime - totalDriving}h idle</p>
+            </div>
+            <div className="text-right">
+              <span className="text-2xl font-bold text-green-600">{Math.round((totalDriving / totalTime) * 100)}%</span>
+              <p className="text-xs text-gray-500">Utilization</p>
             </div>
           </div>
-        </div>
-        {/* Key Metrics */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 lg:gap-6 mb-6 lg:mb-8">
-          <div className="card">
-            <div className="card-content p-4 lg:p-6 text-center">
-              <div className="text-2xl lg:text-3xl font-bold text-gray-900 mb-2">${totalEarnings.toLocaleString()}</div>
-              <div className="text-xs lg:text-sm font-medium text-gray-600">Total Earnings</div>
-            </div>
-          </div>
-          <div className="card">
-            <div className="card-content p-4 lg:p-6 text-center">
-              <div className="text-2xl lg:text-3xl font-bold text-gray-900 mb-2">{avgRating}</div>
-              <div className="text-xs lg:text-sm font-medium text-gray-600">Average Rating</div>
-            </div>
-          </div>
-          <div className="card">
-            <div className="card-content p-4 lg:p-6 text-center">
-              <div className="text-2xl lg:text-3xl font-bold text-gray-900 mb-2">{totalKm.toLocaleString()}</div>
-              <div className="text-xs lg:text-sm font-medium text-gray-600">Total Kilometres</div>
-            </div>
-          </div>
-          <div className="card">
-            <div className="card-content p-4 lg:p-6 text-center">
-              <div className="text-2xl lg:text-3xl font-bold text-gray-900 mb-2">{ranking}</div>
-              <div className="text-xs lg:text-sm font-medium text-gray-600">Top Rated Driver</div>
-            </div>
-          </div>
-        </div>
-
-        {/* Analytics Charts */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 lg:gap-6 mb-6 lg:mb-8">
-          {/* Views & Clicks Chart */}
-          <div className="card">
-            <div className="card-header">
-              <h2 className="card-title">Profile Views & Clicks</h2>
-            </div>
-            <div className="p-6">
-              <div className="mb-4">
-                <div className="flex justify-between items-center mb-2">
-                  <span className="text-sm text-gray-600">Total Views: {profileViews.toLocaleString()}</span>
-                  <span className="text-sm text-gray-600">Total Clicks: {profileClicks.toLocaleString()}</span>
-                </div>
-              </div>
-              <div className="h-64 bg-gray-50 rounded-lg p-4">
-                <svg viewBox="0 0 400 200" className="w-full h-full">
-                  {/* Grid lines */}
-                  <defs>
-                    <pattern id="grid" width="40" height="20" patternUnits="userSpaceOnUse">
-                      <path d="M 40 0 L 0 0 0 20" fill="none" stroke="#e5e7eb" strokeWidth="1"/>
-                    </pattern>
-                  </defs>
-                  <rect width="100%" height="100%" fill="url(#grid)" />
-                  
-                  {/* Views line (blue) */}
-                  <polyline
-                    fill="none"
-                    stroke="#3b82f6"
-                    strokeWidth="2"
-                    points="20,150 60,120 100,140 140,100 180,110 220,80 260,90 300,60 340,70 380,50"
+          <div className="flex items-end justify-between h-44 px-4">
+            {TIME_SPLIT.map(t => (
+              <div key={t.label} className="flex flex-col items-center flex-1 mx-2">
+                <span className="text-xs font-medium text-gray-600 mb-1">{t.driving + t.idle}h</span>
+                <div className="w-full max-w-16 flex flex-col" style={{ height: `${((t.driving + t.idle) / 50) * 120}px` }}>
+                  <div
+                    className="rounded-t-lg"
+                    style={{
+                      height: `${(t.idle / (t.driving + t.idle)) * 100}%`,
+                      backgroundColor: '#e5e7eb',
+                    }}
                   />
-                  
-                  {/* Clicks line (green) */}
-                  <polyline
-                    fill="none"
-                    stroke="#10b981"
-                    strokeWidth="2"
-                    points="20,170 60,160 100,165 140,140 180,145 220,130 260,135 300,120 340,125 380,110"
+                  <div
+                    className="rounded-b-lg"
+                    style={{
+                      height: `${(t.driving / (t.driving + t.idle)) * 100}%`,
+                      background: 'linear-gradient(to top, #3f2a52, #6b4f8a)',
+                    }}
                   />
-                  
-                  {/* Data points for Views */}
-                  <circle cx="20" cy="150" r="3" fill="#3b82f6"/>
-                  <circle cx="100" cy="140" r="3" fill="#3b82f6"/>
-                  <circle cx="180" cy="110" r="3" fill="#3b82f6"/>
-                  <circle cx="260" cy="90" r="3" fill="#3b82f6"/>
-                  <circle cx="340" cy="70" r="3" fill="#3b82f6"/>
-                  
-                  {/* Data points for Clicks */}
-                  <circle cx="20" cy="170" r="3" fill="#10b981"/>
-                  <circle cx="100" cy="165" r="3" fill="#10b981"/>
-                  <circle cx="180" cy="145" r="3" fill="#10b981"/>
-                  <circle cx="260" cy="135" r="3" fill="#10b981"/>
-                  <circle cx="340" cy="125" r="3" fill="#10b981"/>
-                </svg>
-              </div>
-              <div className="flex justify-center space-x-6 mt-4">
-                <div className="flex items-center space-x-2">
-                  <div className="w-3 h-3 bg-blue-500 rounded-full"></div>
-                  <span className="text-sm text-gray-600">Profile Views</span>
                 </div>
-                <div className="flex items-center space-x-2">
-                  <div className="w-3 h-3 bg-green-500 rounded-full"></div>
-                  <span className="text-sm text-gray-600">Profile Clicks</span>
-                </div>
+                <span className="text-xs text-gray-500 mt-2">{t.label}</span>
               </div>
-            </div>
+            ))}
           </div>
-
-          {/* Earnings Over Time Chart */}
-          <div className="card">
-            <div className="card-header">
-              <h2 className="card-title">Earnings Over Time</h2>
+          <div className="flex items-center justify-center space-x-6 mt-4 pt-4 border-t border-gray-100">
+            <div className="flex items-center space-x-2">
+              <div className="w-3 h-3 rounded-full bg-[#3f2a52]" />
+              <span className="text-xs text-gray-600">Driving Time</span>
             </div>
-            <div className="p-6">
-              <div className="mb-4">
-                <div className="flex justify-between items-center mb-2">
-                  <span className="text-sm text-gray-600">This Month: —</span>
-                  <span className="text-sm text-gray-600">Weekly Avg: —</span>
-                </div>
-              </div>
-              <div className="h-64 bg-gray-50 rounded-lg p-4 flex items-center justify-center">
-                <p className="text-sm text-gray-400">Earnings data will appear as you complete jobs.</p>
-              </div>
-            </div>
-          </div>
-        </div>
-        
-        {/* Additional Analytics */}
-        <div className="grid lg:grid-cols-2 gap-6 mb-8">
-          {/* Load Acceptance vs Decline Rate */}
-          <div className="card">
-            <div className="card-header">
-              <h2 className="card-title">Load Acceptance vs. Decline Rate</h2>
-            </div>
-            <div className="p-6">
-              <div className="grid grid-cols-2 gap-4 mb-4">
-                <div className="text-center">
-                  <div className="text-2xl font-bold text-green-600">{acceptanceRate}%</div>
-                  <div className="text-sm text-gray-600">Accepted</div>
-                </div>
-                <div className="text-center">
-                  <div className="text-2xl font-bold text-red-600">{100 - acceptanceRate}%</div>
-                  <div className="text-sm text-gray-600">Declined</div>
-                </div>
-              </div>
-              <div className="h-48 bg-gray-50 rounded-lg p-4 flex items-center justify-center">
-                <svg viewBox="0 0 200 200" className="w-40 h-40">
-                  {/* Pie chart circle */}
-                  <circle cx="100" cy="100" r="80" fill="transparent" stroke="#10b981" strokeWidth="20" strokeDasharray="140 22" strokeDashoffset="25" transform="rotate(-90 100 100)"/>
-                  <circle cx="100" cy="100" r="80" fill="transparent" stroke="#ef4444" strokeWidth="20" strokeDasharray="42 120" strokeDashoffset="-137" transform="rotate(-90 100 100)"/>
-                  
-                  {/* Center text */}
-                  <text x="100" y="95" textAnchor="middle" fontSize="20" fill="#374151" fontWeight="bold">{acceptanceRate}%</text>
-                  <text x="100" y="115" textAnchor="middle" fontSize="12" fill="#6b7280">Accepted</text>
-                </svg>
-              </div>
-              <div className="flex justify-center space-x-6 mt-4">
-                <div className="flex items-center space-x-2">
-                  <div className="w-3 h-3 bg-green-500 rounded-full"></div>
-                  <span className="text-sm text-gray-600">Accepted ({acceptanceRate}%)</span>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <div className="w-3 h-3 bg-red-500 rounded-full"></div>
-                  <span className="text-sm text-gray-600">Declined ({100 - acceptanceRate}%)</span>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Miles Driven vs Pay Per Mile */}
-          <div className="card">
-            <div className="card-header">
-              <h2 className="card-title">Miles Driven vs. Pay Per Mile</h2>
-            </div>
-            <div className="p-6">
-              <div className="mb-4">
-                <div className="flex justify-between items-center mb-2">
-                  <span className="text-sm text-gray-600">Average: —</span>
-                  <span className="text-sm text-gray-600">Best: —</span>
-                </div>
-              </div>
-              <div className="h-48 bg-gray-50 rounded-lg p-4 flex items-center justify-center">
-                <p className="text-sm text-gray-400">Data will populate as you complete trips.</p>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Time Analytics */}
-        <div className="card">
-          <div className="card-header">
-            <h2 className="card-title">Idle Time vs. Driving Time</h2>
-          </div>
-          <div className="p-6">
-            <div className="grid grid-cols-3 gap-4 mb-4">
-              <div className="text-center">
-                <div className="text-2xl font-bold text-blue-600">—</div>
-                <div className="text-sm text-gray-600">Driving Time</div>
-              </div>
-              <div className="text-center">
-                <div className="text-2xl font-bold text-orange-600">—</div>
-                <div className="text-sm text-gray-600">Idle Time</div>
-              </div>
-              <div className="text-center">
-                <div className="text-2xl font-bold text-green-600">—</div>
-                <div className="text-sm text-gray-600">Efficiency</div>
-              </div>
-            </div>
-            <div className="h-64 bg-gray-50 rounded-lg p-4 flex items-center justify-center">
-              <p className="text-sm text-gray-400">Time tracking data will appear as you start working on jobs.</p>
+            <div className="flex items-center space-x-2">
+              <div className="w-3 h-3 rounded bg-gray-200" />
+              <span className="text-xs text-gray-600">Idle Time</span>
             </div>
           </div>
         </div>

@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { DashboardLayout } from '@/components/layout/DashboardLayout'
+import { useAuth } from '@/components/providers/AuthProvider'
 
 interface AnalyticsData {
   kpi: { totalCost: number; onTime: number; shipments: number; costPerMile: number }
@@ -13,11 +14,13 @@ interface AnalyticsData {
 }
 
 export default function ClientAnalytics() {
+  const { loading: authLoading } = useAuth()
   const [data, setData] = useState<AnalyticsData | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
+    if (authLoading) return
     fetch('/api/analytics/client')
       .then(r => r.json())
       .then(d => {
@@ -29,7 +32,7 @@ export default function ClientAnalytics() {
         setError('Failed to fetch analytics data')
         setLoading(false)
       })
-  }, [])
+  }, [authLoading])
 
   if (loading) {
     return (

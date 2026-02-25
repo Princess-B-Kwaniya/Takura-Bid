@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { DashboardLayout } from '@/components/layout/DashboardLayout'
+import { useAuth } from '@/components/providers/AuthProvider'
 
 interface LoadData {
   load_id: string
@@ -114,17 +115,19 @@ function LoadListItem({ load }: { load: LoadData }) {
 }
 
 export default function MyLoads() {
+  const { loading: authLoading } = useAuth()
   const [loads, setLoads] = useState<LoadData[]>([])
   const [loading, setLoading] = useState(true)
   const [statusFilter, setStatusFilter] = useState('All')
   const [search, setSearch] = useState('')
 
   useEffect(() => {
+    if (authLoading) return
     fetch('/api/loads/my')
       .then(r => r.json())
       .then(d => { setLoads(d.loads ?? []); setLoading(false) })
       .catch(() => setLoading(false))
-  }, [])
+  }, [authLoading])
 
   const filtered = loads.filter(l => {
     if (statusFilter !== 'All' && l.status !== statusFilter) return false

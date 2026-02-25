@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { DashboardLayout } from '@/components/layout/DashboardLayout'
 import { ROUTE_SUGGESTIONS } from '@/lib/routes'
+import { useAuth } from '@/components/providers/AuthProvider'
 
 interface Job {
   job_id: string
@@ -162,6 +163,7 @@ function JobCard({ job, onAccept, accepting }: { job: Job; onAccept: (id: string
 }
 
 export default function MyJobs() {
+  const { loading: authLoading } = useAuth()
   const [jobs, setJobs] = useState<Job[]>([])
   const [loading, setLoading] = useState(true)
   const [accepting, setAccepting] = useState<string | null>(null)
@@ -169,11 +171,12 @@ export default function MyJobs() {
   const [activeTab, setActiveTab] = useState<'jobs' | 'calendar' | 'routes'>('jobs')
 
   useEffect(() => {
+    if (authLoading) return
     fetch('/api/jobs/my')
       .then(r => r.json())
       .then(d => { setJobs(d.jobs ?? []); setLoading(false) })
       .catch(() => setLoading(false))
-  }, [])
+  }, [authLoading])
 
   async function handleAccept(jobId: string) {
     setAccepting(jobId)

@@ -32,9 +32,12 @@ export async function POST(req: NextRequest) {
     const supabase = await createClient()
     if (!supabase) return NextResponse.json({ error: 'DB unavailable' }, { status: 500 })
 
+    const load_id = `LOAD${Date.now()}`
+
     const { data, error } = await supabase
         .from('loads')
         .insert({
+            load_id,
             client_id: user.user_id,
             title,
             cargo_type,

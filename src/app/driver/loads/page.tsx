@@ -4,6 +4,7 @@ import { useState, useEffect, useMemo } from 'react'
 import Link from 'next/link'
 import { DashboardLayout } from '@/components/layout/DashboardLayout'
 import { CITIES, CARGO_TYPES } from '@/lib/routes'
+import { useAuth } from '@/components/providers/AuthProvider'
 
 interface LoadWithClient {
   load_id: string
@@ -146,6 +147,7 @@ function LoadCard({ load, bookmarked, onToggleBookmark }: { load: LoadWithClient
 }
 
 export default function LoadBoard() {
+  const { loading: authLoading } = useAuth()
   const [loads, setLoads] = useState<LoadWithClient[]>([])
   const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState('')
@@ -155,6 +157,7 @@ export default function LoadBoard() {
   const [showBookmarked, setShowBookmarked] = useState(false)
 
   useEffect(() => {
+    if (authLoading) return
     fetch('/api/loads/available')
       .then(r => r.json())
       .then(d => { setLoads(d.loads ?? []); setLoading(false) })
@@ -163,7 +166,7 @@ export default function LoadBoard() {
     // Load bookmarks from localStorage
     const saved = localStorage.getItem('driver_bookmarked_loads')
     if (saved) setBookmarks(new Set(JSON.parse(saved)))
-  }, [])
+  }, [authLoading])
 
   function toggleBookmark(id: string) {
     setBookmarks(prev => {

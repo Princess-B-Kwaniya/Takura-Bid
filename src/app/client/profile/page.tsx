@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { DashboardLayout } from '@/components/layout/DashboardLayout'
+import { useAuth } from '@/components/providers/AuthProvider'
 
 interface ProfileData {
   user_id: string
@@ -19,6 +20,7 @@ interface ProfileData {
 }
 
 export default function ClientProfile() {
+  const { loading: authLoading } = useAuth()
   const [profile, setProfile] = useState<ProfileData | null>(null)
   const [loadingProfile, setLoadingProfile] = useState(true)
 
@@ -34,6 +36,7 @@ export default function ClientProfile() {
   const [error, setError] = useState('')
 
   useEffect(() => {
+    if (authLoading) return
     fetch('/api/users/profile')
       .then(r => r.json())
       .then(d => {
@@ -49,7 +52,7 @@ export default function ClientProfile() {
         setLoadingProfile(false)
       })
       .catch(() => setLoadingProfile(false))
-  }, [])
+  }, [authLoading])
 
   const email = profile?.email ?? ''
   const totalSpent = profile?.total_spent_usd ?? 0

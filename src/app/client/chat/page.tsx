@@ -1,199 +1,180 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { DashboardLayout } from '@/components/layout/DashboardLayout'
-
-interface ChatMessage {
-  id: string
-  sender: 'driver' | 'client'
-  message: string
-  timestamp: string
-  read: boolean
-}
+import { useAuth } from '@/components/providers/AuthProvider'
 
 interface Conversation {
-  id: string
-  driverName: string
-  driverAvatar: string
-  lastMessage: string
-  lastMessageTime: string
-  unreadCount: number
-  isOnline: boolean
   jobId: string
-  messages: ChatMessage[]
+  loadTitle: string
+  otherPartyId: string
+  otherPartyName: string
+  status: string
 }
 
-const mockConversations: Conversation[] = []
-
-function ConversationList({ conversations, selectedConversation, onSelectConversation }: {
-  conversations: Conversation[]
-  selectedConversation: string | null
-  onSelectConversation: (id: string) => void
-}) {
-  return (
-    <div className="card h-full flex flex-col">
-      <div className="card-header">
-        <h2 className="card-title">Messages</h2>
-      </div>
-      <div className="flex-1 overflow-y-auto">
-        {conversations.length > 0 ? conversations.map((conversation) => (
-          <div
-            key={conversation.id}
-            onClick={() => onSelectConversation(conversation.id)}
-            className={`p-4 border-b border-gray-100 cursor-pointer hover:bg-gray-50 transition-colors ${
-              selectedConversation === conversation.id ? 'bg-blue-50 border-blue-200' : ''
-            }`}
-          >
-            <div className="flex items-center space-x-3">
-              <div className="relative">
-                <div className="w-12 h-12 bg-gray-900 rounded-lg flex items-center justify-center text-white font-medium">
-                  {conversation.driverAvatar}
-                </div>
-                {conversation.isOnline && (
-                  <div className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 border-2 border-white rounded-full"></div>
-                )}
-              </div>
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center justify-between">
-                  <h4 className="text-sm font-semibold text-gray-900 truncate">
-                    {conversation.driverName}
-                  </h4>
-                  <span className="text-xs text-gray-500">{conversation.lastMessageTime}</span>
-                </div>
-                <div className="flex items-center justify-between">
-                  <p className="text-sm text-gray-600 truncate">{conversation.lastMessage}</p>
-                  {conversation.unreadCount > 0 && (
-                    <span className="bg-gray-900 text-white text-xs rounded-full px-2 py-1 ml-2">
-                      {conversation.unreadCount}
-                    </span>
-                  )}
-                </div>
-                <p className="text-xs text-gray-500 mt-1">Job: {conversation.jobId}</p>
-              </div>
-            </div>
-          </div>
-        )) : (
-          <div className="p-8 text-center">
-            <svg className="w-12 h-12 text-gray-300 mx-auto mb-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
-            </svg>
-            <h4 className="text-sm font-semibold text-gray-900 mb-1">No conversations yet</h4>
-            <p className="text-xs text-gray-500">Messages from drivers will appear here.</p>
-          </div>
-        )}
-      </div>
-    </div>
-  )
-}
-
-function ChatWindow({ conversation }: { conversation: Conversation | null }) {
-  if (!conversation) {
-    return (
-      <div className="card h-full flex items-center justify-center">
-        <div className="text-center">
-          <div className="w-16 h-16 bg-gray-200 rounded-lg mx-auto mb-4 flex items-center justify-center">
-            <div className="w-8 h-8 border-2 border-gray-400 rounded-full"></div>
-          </div>
-          <h3 className="text-lg font-medium text-gray-900 mb-2">Select a conversation</h3>
-          <p className="text-gray-600">Choose a conversation to start messaging with drivers</p>
-        </div>
-      </div>
-    )
-  }
-
-  return (
-    <div className="card h-full flex flex-col">
-      {/* Chat Header */}
-      <div className="card-header">
-        <div className="flex items-center space-x-3">
-          <div className="relative">
-            <div className="w-10 h-10 bg-gray-900 rounded-lg flex items-center justify-center text-white font-medium">
-              {conversation.driverAvatar}
-            </div>
-            {conversation.isOnline && (
-              <div className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 border-2 border-white rounded-full"></div>
-            )}
-          </div>
-          <div>
-            <h3 className="text-lg font-semibold text-gray-900">{conversation.driverName}</h3>
-            <p className="text-sm text-gray-600">
-              {conversation.isOnline ? 'Online' : 'Offline'} • Job: {conversation.jobId}
-            </p>
-          </div>
-        </div>
-      </div>
-
-      {/* Messages */}
-      <div className="flex-1 overflow-y-auto p-4 space-y-4">
-        {conversation.messages.map((message) => (
-          <div
-            key={message.id}
-            className={`flex ${message.sender === 'client' ? 'justify-end' : 'justify-start'}`}
-          >
-            <div
-              className={`max-w-xs lg:max-w-md px-4 py-2 rounded-lg ${
-                message.sender === 'client'
-                  ? 'bg-gray-900 text-white'
-                  : 'bg-gray-200 text-gray-900'
-              }`}
-            >
-              <p className="text-sm">{message.message}</p>
-              <p className={`text-xs mt-1 ${
-                message.sender === 'client' ? 'text-gray-300' : 'text-gray-500'
-              }`}>
-                {message.timestamp}
-              </p>
-            </div>
-          </div>
-        ))}
-      </div>
-
-      {/* Message Input */}
-      <div className="p-4 border-t border-gray-200">
-        <div className="flex items-center space-x-3">
-          <input
-            type="text"
-            placeholder="Type your message..."
-            className="input-field flex-1"
-          />
-          <button className="btn-primary px-4 py-2">
-            Send
-          </button>
-        </div>
-      </div>
-    </div>
-  )
+interface Message {
+  message_id: string
+  job_id: string
+  sender_id: string
+  recipient_id: string
+  content: string
+  read: boolean
+  sent_at: string
 }
 
 export default function ClientChat() {
-  const [selectedConversation, setSelectedConversation] = useState<string | null>(null)
-  const selectedConv = mockConversations.find(c => c.id === selectedConversation)
+  const { user } = useAuth()
+  const [conversations, setConversations] = useState<Conversation[]>([])
+  const [selected, setSelected] = useState<Conversation | null>(null)
+  const [messages, setMessages] = useState<Message[]>([])
+  const [text, setText] = useState('')
+  const [sending, setSending] = useState(false)
+  const [loadingConvs, setLoadingConvs] = useState(true)
+  const [loadingMsgs, setLoadingMsgs] = useState(false)
+  const bottomRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    fetch('/api/conversations')
+      .then(r => r.json())
+      .then(d => { setConversations(d.conversations ?? []); setLoadingConvs(false) })
+      .catch(() => setLoadingConvs(false))
+  }, [])
+
+  useEffect(() => {
+    if (!selected) return
+    setLoadingMsgs(true)
+    fetch(`/api/conversations/${selected.jobId}`)
+      .then(r => r.json())
+      .then(d => { setMessages(d.messages ?? []); setLoadingMsgs(false) })
+      .catch(() => setLoadingMsgs(false))
+  }, [selected])
+
+  useEffect(() => {
+    bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
+  }, [messages])
+
+  async function sendMessage(e: React.FormEvent) {
+    e.preventDefault()
+    if (!text.trim() || !selected || !user) return
+    setSending(true)
+    const res = await fetch('/api/messages', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ jobId: selected.jobId, recipientId: selected.otherPartyId, content: text.trim() }),
+    })
+    const data = await res.json()
+    setSending(false)
+    if (res.ok) {
+      setMessages(prev => [...prev, data.message])
+      setText('')
+    }
+  }
 
   return (
     <DashboardLayout userType="client">
       <div className="content-area">
-        {/* Page Header */}
-        <div className="page-header">
-          <div className="flex items-center justify-between">
-            <div>
-              <h1 className="page-title">Chat</h1>
-              <p className="page-subtitle">Communicate with your drivers in real-time</p>
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-0 h-[calc(100vh-200px)] min-h-[500px] rounded-xl overflow-hidden border border-gray-200">
+          {/* Conversation list */}
+          <div className="bg-white border-r border-gray-200 flex flex-col">
+            <div className="p-4 border-b border-gray-200">
+              <h3 className="text-lg font-semibold text-gray-900">Messages</h3>
+            </div>
+            <div className="flex-1 overflow-y-auto">
+              {loadingConvs ? (
+                <div className="p-8 text-center text-gray-400 text-sm">Loading...</div>
+              ) : conversations.length === 0 ? (
+                <div className="p-8 text-center">
+                  <svg className="w-12 h-12 text-gray-300 mx-auto mb-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+                  </svg>
+                  <p className="text-sm text-gray-500">No conversations yet. Hire a driver to start messaging.</p>
+                </div>
+              ) : (
+                conversations.map(conv => (
+                  <button
+                    key={conv.jobId}
+                    onClick={() => setSelected(conv)}
+                    className={`w-full text-left p-4 border-b border-gray-100 hover:bg-gray-50 transition-colors ${selected?.jobId === conv.jobId ? 'bg-[#3f2a52]/5 border-l-2 border-l-[#3f2a52]' : ''}`}
+                  >
+                    <div className="flex items-center space-x-3">
+                      <div className="w-10 h-10 bg-[#3f2a52] rounded-full flex items-center justify-center text-white font-semibold flex-shrink-0">
+                        {conv.otherPartyName[0]}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="font-semibold text-sm text-gray-900 truncate">{conv.otherPartyName}</p>
+                        <p className="text-xs text-gray-500 truncate">{conv.loadTitle}</p>
+                        <p className="text-xs text-gray-400">Job: {conv.jobId}</p>
+                      </div>
+                    </div>
+                  </button>
+                ))
+              )}
             </div>
           </div>
-        </div>
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 lg:gap-6">
-          {/* Conversations List */}
-          <div className="lg:col-span-1 h-96 lg:h-[600px]">
-            <ConversationList
-              conversations={mockConversations}
-              selectedConversation={selectedConversation}
-              onSelectConversation={setSelectedConversation}
-            />
-          </div>
 
-          {/* Chat Window */}
-          <div className="lg:col-span-2 h-96 lg:h-[600px]">
-            <ChatWindow conversation={selectedConv || null} />
+          {/* Chat window */}
+          <div className="lg:col-span-2 bg-white flex flex-col">
+            {!selected ? (
+              <div className="flex-1 flex items-center justify-center text-center p-8">
+                <div>
+                  <svg className="w-16 h-16 text-gray-300 mx-auto mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+                  </svg>
+                  <h3 className="text-lg font-medium text-gray-900 mb-2">Select a conversation</h3>
+                  <p className="text-gray-500 text-sm">Choose a job conversation to start messaging</p>
+                </div>
+              </div>
+            ) : (
+              <>
+                <div className="p-4 border-b border-gray-200 flex items-center space-x-3">
+                  <div className="w-10 h-10 bg-[#3f2a52] rounded-full flex items-center justify-center text-white font-semibold">
+                    {selected.otherPartyName[0]}
+                  </div>
+                  <div>
+                    <h3 className="font-semibold text-gray-900">{selected.otherPartyName}</h3>
+                    <p className="text-xs text-gray-500">{selected.loadTitle} &bull; {selected.jobId}</p>
+                  </div>
+                </div>
+
+                <div className="flex-1 overflow-y-auto p-4 space-y-3">
+                  {loadingMsgs ? (
+                    <div className="text-center text-gray-400 text-sm">Loading messages...</div>
+                  ) : messages.length === 0 ? (
+                    <div className="text-center text-gray-400 text-sm py-8">No messages yet. Say hello!</div>
+                  ) : (
+                    messages.map(msg => {
+                      const isMe = msg.sender_id === user?.user_id
+                      return (
+                        <div key={msg.message_id} className={`flex ${isMe ? 'justify-end' : 'justify-start'}`}>
+                          <div className={`max-w-xs lg:max-w-md px-4 py-2 rounded-2xl ${isMe ? 'bg-[#3f2a52] text-white' : 'bg-gray-100 text-gray-900'}`}>
+                            <p className="text-sm">{msg.content}</p>
+                            <p className={`text-xs mt-1 ${isMe ? 'text-white/60' : 'text-gray-500'}`}>
+                              {new Date(msg.sent_at).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}
+                            </p>
+                          </div>
+                        </div>
+                      )
+                    })
+                  )}
+                  <div ref={bottomRef} />
+                </div>
+
+                <form onSubmit={sendMessage} className="p-4 border-t border-gray-200 flex items-center space-x-3">
+                  <input
+                    type="text"
+                    value={text}
+                    onChange={e => setText(e.target.value)}
+                    placeholder="Type your message..."
+                    className="flex-1 border border-gray-300 rounded-xl px-4 py-2 focus:ring-2 focus:ring-[#3f2a52]/20 focus:border-[#3f2a52] transition-all text-sm"
+                  />
+                  <button type="submit" disabled={sending || !text.trim()} className="btn-primary disabled:opacity-50 px-4">
+                    <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
+                    </svg>
+                  </button>
+                </form>
+              </>
+            )}
           </div>
         </div>
       </div>

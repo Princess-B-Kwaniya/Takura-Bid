@@ -2,7 +2,8 @@
 
 import { useState } from 'react'
 import Link from 'next/link'
-import { usePathname } from 'next/navigation'
+import { usePathname, useRouter } from 'next/navigation'
+import { useAuth } from '@/components/providers/AuthProvider'
 
 interface FloatingNavbarProps {
   userType: 'driver' | 'client'
@@ -31,7 +32,15 @@ const clientNavItems: NavItem[] = [
 export function FloatingNavbar({ userType }: FloatingNavbarProps) {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
   const pathname = usePathname()
+  const router = useRouter()
+  const { user, signOut } = useAuth()
   const navItems = userType === 'driver' ? driverNavItems : clientNavItems
+  const profileHref = userType === 'driver' ? '/driver/profile' : '/client/profile'
+
+  const handleSignOut = () => {
+    signOut()
+    router.push('/')
+  }
 
   return (
     <nav className="floating-navbar">
@@ -80,21 +89,19 @@ export function FloatingNavbar({ userType }: FloatingNavbarProps) {
             </div>
           </div>
 
-          {/* User Type Dropdown */}
-          <div className="hidden md:block">
-            <select className="text-sm text-gray-700 bg-transparent border-none focus:ring-0 cursor-pointer">
-              <option>{userType === 'driver' ? 'Driver' : 'Client'}</option>
-              <option>{userType === 'driver' ? 'Client' : 'Driver'}</option>
-            </select>
-          </div>
-
-          {/* Auth Buttons */}
-          <div className="flex items-center space-x-3">
-            <button className="hidden md:inline-flex text-sm font-medium text-gray-700 hover:text-gray-900 transition-colors">
-              Log in
-            </button>
-            <button className="btn-primary text-sm px-6">
-              Sign up
+          {/* Profile & Sign Out */}
+          <div className="hidden md:flex items-center space-x-3">
+            <Link
+              href={profileHref}
+              className="text-sm font-medium text-gray-700 hover:text-gray-900 transition-colors"
+            >
+              {user?.name ?? 'Profile'}
+            </Link>
+            <button
+              onClick={handleSignOut}
+              className="btn-primary text-sm px-5"
+            >
+              Sign out
             </button>
           </div>
           
@@ -149,13 +156,20 @@ export function FloatingNavbar({ userType }: FloatingNavbarProps) {
               ))}
             </div>
 
-            {/* Mobile Auth */}
+            {/* Mobile Profile & Sign Out */}
             <div className="pt-4 border-t border-gray-200 space-y-3">
-              <button className="block w-full text-left text-base font-medium text-gray-700">
-                Log in
-              </button>
-              <button className="w-full btn-primary text-base py-3">
-                Sign up
+              <Link
+                href={profileHref}
+                className="block w-full text-left text-base font-medium text-gray-700 hover:text-gray-900"
+                onClick={() => setIsMobileMenuOpen(false)}
+              >
+                {user?.name ?? 'Profile'}
+              </Link>
+              <button
+                onClick={handleSignOut}
+                className="w-full btn-primary text-base py-3"
+              >
+                Sign out
               </button>
             </div>
           </div>

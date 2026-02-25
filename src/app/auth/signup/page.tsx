@@ -15,7 +15,9 @@ export default function SignupPage() {
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
   const router = useRouter()
-  const { signUp } = useAuth()
+  const { signUp, user } = useAuth()
+  const homeHref = user?.role === 'DRIVER' ? '/driver' : '/client'
+  const profileHref = user?.role === 'DRIVER' ? '/driver/profile' : '/client/profile'
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -55,6 +57,44 @@ export default function SignupPage() {
 
   return (
     <div className="min-h-screen bg-white flex flex-col items-center justify-center px-6 py-12 selection:bg-[#3f2a52] selection:text-white">
+      {/* Navbar */}
+      <div className="fixed top-6 left-0 right-0 z-50 flex justify-center px-6">
+        <header className="w-full max-w-5xl bg-white/80 backdrop-blur-md border border-gray-100 rounded-full shadow-[0_8px_30px_rgb(0,0,0,0.04)] px-8 py-4 flex items-center justify-between">
+          <Link href="/" className="flex items-center space-x-3">
+            <div className="w-8 h-8 bg-[#3f2a52] rounded-lg flex items-center justify-center">
+              <svg width="18" height="18" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M8 18h16v6H8v-6zm2-4h12v3H10v-3z" fill="white"/>
+                <circle cx="12" cy="26" r="2" fill="white"/>
+                <circle cx="20" cy="26" r="2" fill="white"/>
+                <path d="M14 12h4v2h-4v-2z" fill="white"/>
+              </svg>
+            </div>
+            <span className="text-xl font-bold tracking-tight text-[#3f2a52]">TakuraBid</span>
+          </Link>
+          <nav className="flex items-center space-x-6">
+            {user ? (
+              <>
+                <Link href={homeHref} className="text-sm font-medium text-gray-600 hover:text-[#3f2a52] transition-colors">
+                  Home
+                </Link>
+                <Link href={profileHref} className="text-sm font-medium text-white bg-[#3f2a52] px-5 py-2 rounded-full hover:bg-[#3f2a52]/90 transition-colors">
+                  Profile
+                </Link>
+              </>
+            ) : (
+              <>
+                <Link href="/auth/login" className="text-sm font-medium text-gray-600 hover:text-[#3f2a52] transition-colors">
+                  Log in
+                </Link>
+                <Link href="/auth/signup" className="text-sm font-medium text-white bg-[#3f2a52] px-5 py-2 rounded-full hover:bg-[#3f2a52]/90 transition-colors">
+                  Sign up
+                </Link>
+              </>
+            )}
+          </nav>
+        </header>
+      </div>
+
       {/* Logo */}
       <Link href="/" className="flex items-center space-x-3 mb-12">
         <div className="w-10 h-10 bg-[#3f2a52] rounded-lg flex items-center justify-center shadow-[0_0_20px_rgba(63,42,82,0.3)]">

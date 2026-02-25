@@ -126,8 +126,8 @@ export default function HomePage() {
             </p>
             
             <div className="grid md:grid-cols-2 gap-6 w-full max-w-3xl">
-              <Link 
-                href="/auth/signup"
+              <Link
+                href={user ? '/client' : '/auth/signup'}
                 className="group relative overflow-hidden bg-white p-8 rounded-2xl border border-gray-100 shadow-[0_4px_20px_rgb(0,0,0,0.03)] hover:shadow-[0_10px_40px_rgba(63,42,82,0.15)] hover:border-[#3f2a52]/20 transition-all duration-300"
               >
                 <div className="absolute inset-0 bg-gradient-to-br from-transparent to-gray-50 opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
@@ -140,13 +140,13 @@ export default function HomePage() {
                   <h3 className="text-2xl font-bold text-gray-900 mb-2">Client Portal</h3>
                   <p className="text-gray-500 mb-6 text-sm">Post needs, evaluate bids, and manage suppliers efficiently.</p>
                   <span className="inline-flex items-center text-[#3f2a52] font-semibold text-sm group-hover:translate-x-1 transition-transform">
-                    Access System <span className="ml-2">→</span>
+                    {user ? 'Go to Dashboard' : 'Access System'} <span className="ml-2">→</span>
                   </span>
                 </div>
               </Link>
-              
-              <Link 
-                href="/auth/signup"
+
+              <Link
+                href={user ? '/driver' : '/auth/signup'}
                 className="group relative overflow-hidden bg-[#3f2a52] p-8 rounded-2xl shadow-[0_10px_40px_rgba(63,42,82,0.25)] hover:shadow-[0_20px_50px_rgba(63,42,82,0.35)] hover:-translate-y-1 transition-all duration-300"
               >
                 <div className="absolute top-0 right-0 w-64 h-64 bg-white/5 rounded-full blur-3xl -mr-32 -mt-32 pointer-events-none"></div>
@@ -159,7 +159,7 @@ export default function HomePage() {
                   <h3 className="text-2xl font-bold text-white mb-2">Driver Portal</h3>
                   <p className="text-white/70 mb-6 text-sm">Unlock new opportunities and grow your delivery network.</p>
                   <span className="inline-flex items-center text-white font-semibold text-sm group-hover:translate-x-1 transition-transform">
-                    Join Network <span className="ml-2">→</span>
+                    {user ? 'Go to Dashboard' : 'Join Network'} <span className="ml-2">→</span>
                   </span>
                 </div>
               </Link>

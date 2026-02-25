@@ -44,7 +44,7 @@ interface ExistingBid {
 export default function DriverLoadDetailPage() {
   const { id } = useParams<{ id: string }>()
   const router = useRouter()
-  const { user } = useAuth()
+  const { user, loading: authLoading } = useAuth()
   const [load, setLoad] = useState<LoadData | null>(null)
   const [existingBid, setExistingBid] = useState<ExistingBid | null>(null)
   const [loading, setLoading] = useState(true)
@@ -55,6 +55,7 @@ export default function DriverLoadDetailPage() {
   const [success, setSuccess] = useState(false)
 
   useEffect(() => {
+    if (authLoading) return
     async function load_data() {
       const [loadRes, bidRes] = await Promise.all([
         fetch(`/api/loads/${id}`),
@@ -72,10 +73,14 @@ export default function DriverLoadDetailPage() {
       setLoading(false)
     }
     load_data()
-  }, [id, user])
+  }, [id, user, authLoading])
 
   async function handleApply(e: React.FormEvent) {
     e.preventDefault()
+    if (!user || user.role !== 'DRIVER') {
+      setError('You must be signed in as a driver to apply')
+      return
+    }
     setError('')
     setSubmitting(true)
     const res = await fetch('/api/bids', {

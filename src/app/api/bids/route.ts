@@ -34,9 +34,11 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'You have already applied to this load' }, { status: 409 })
   }
 
+  const bid_id = `BID${Date.now()}`
+
   const { data, error } = await supabase
     .from('bids')
-    .insert({ load_id: loadId, driver_id: user.user_id, amount_usd: amount, message, status: 'Pending' })
+    .insert({ bid_id, load_id: loadId, driver_id: user.user_id, amount_usd: amount, message, status: 'Pending' })
     .select()
     .single()
 

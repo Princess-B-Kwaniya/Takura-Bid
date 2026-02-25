@@ -60,13 +60,12 @@ export default function DriverAnalytics() {
         {/* KPI Cards */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
           {[
-            { label: 'Total Earnings', value: `$${KPI.earnings.toLocaleString()}`, icon: '💰', sub: 'This quarter' },
-            { label: 'Average Rating', value: KPI.rating.toFixed(1), icon: '⭐', sub: 'Out of 5.0' },
-            { label: 'Distance Covered', value: `${(KPI.distance / 1000).toFixed(1)}k km`, icon: '🛣️', sub: 'This quarter' },
-            { label: 'Driver Ranking', value: KPI.ranking, icon: '🏆', sub: 'Among all drivers' },
+            { label: 'Total Earnings', value: `$${KPI.earnings.toLocaleString()}`, icon: '', sub: 'This quarter' },
+            { label: 'Average Rating', value: KPI.rating.toFixed(1), icon: '', sub: 'Out of 5.0' },
+            { label: 'Distance Covered', value: `${(KPI.distance / 1000).toFixed(1)}k km`, icon: '', sub: 'This quarter' },
+            { label: 'Driver Ranking', value: KPI.ranking, icon: '', sub: 'Among all drivers' },
           ].map(k => (
             <div key={k.label} className="bg-white rounded-xl border border-gray-200 p-5">
-              <span className="text-2xl">{k.icon}</span>
               <p className="text-2xl font-bold text-gray-900 mt-2 mb-1">{k.value}</p>
               <p className="text-sm text-gray-600">{k.label}</p>
               <p className="text-xs text-gray-400 mt-1">{k.sub}</p>

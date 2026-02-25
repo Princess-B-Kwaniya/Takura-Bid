@@ -213,19 +213,19 @@ export default function MyJobs() {
             {/* Summary cards */}
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
               <div className="bg-white rounded-xl border border-gray-200 p-4">
-                <p className="text-sm text-gray-500">📋 Pending</p>
+                <p className="text-sm text-gray-500">Pending</p>
                 <p className="text-2xl font-bold text-gray-900">{pending.length}</p>
               </div>
               <div className="bg-white rounded-xl border border-gray-200 p-4">
-                <p className="text-sm text-gray-500">🚛 Active</p>
+                <p className="text-sm text-gray-500">Active</p>
                 <p className="text-2xl font-bold text-gray-900">{active.length}</p>
               </div>
               <div className="bg-white rounded-xl border border-gray-200 p-4">
-                <p className="text-sm text-gray-500">✅ Completed</p>
+                <p className="text-sm text-gray-500">Completed</p>
                 <p className="text-2xl font-bold text-gray-900">{completed.length}</p>
               </div>
               <div className="bg-white rounded-xl border border-gray-200 p-4">
-                <p className="text-sm text-gray-500">💰 Earned</p>
+                <p className="text-sm text-gray-500">Earned</p>
                 <p className="text-2xl font-bold text-gray-900">${totalEarned.toLocaleString()}</p>
               </div>
             </div>
@@ -233,19 +233,19 @@ export default function MyJobs() {
             {/* Tab navigation */}
             <div className="flex space-x-2 mb-6 bg-white rounded-xl border border-gray-200 p-1">
               {[
-                { key: 'jobs', label: 'My Jobs', icon: '📋' },
-                { key: 'calendar', label: 'Calendar', icon: '📅' },
-                { key: 'routes', label: 'Route Planner', icon: '🗺️' },
+                { key: 'jobs', label: 'My Jobs', icon: '' },
+                { key: 'calendar', label: 'Calendar', icon: '' },
+                { key: 'routes', label: 'Route Planner', icon: '' },
               ].map(tab => (
                 <button
                   key={tab.key}
                   onClick={() => setActiveTab(tab.key as 'jobs' | 'calendar' | 'routes')}
                   className={`flex-1 px-4 py-2.5 rounded-lg text-sm font-medium transition-all ${activeTab === tab.key
-                      ? 'bg-[#3f2a52] text-white shadow-sm'
-                      : 'text-gray-600 hover:bg-gray-100'
+                    ? 'bg-[#3f2a52] text-white shadow-sm'
+                    : 'text-gray-600 hover:bg-gray-100'
                     }`}
                 >
-                  <span className="mr-1">{tab.icon}</span> {tab.label}
+                  {tab.label}
                 </button>
               ))}
             </div>
@@ -322,16 +322,16 @@ export default function MyJobs() {
                       <div
                         key={day}
                         className={`h-14 rounded-lg flex flex-col items-center justify-center relative transition-all ${isToday ? 'bg-[#3f2a52] text-white' :
-                            jobInfo ? 'bg-blue-50 border border-blue-200' :
-                              'hover:bg-gray-50'
+                          jobInfo ? 'bg-blue-50 border border-blue-200' :
+                            'hover:bg-gray-50'
                           }`}
                       >
                         <span className={`text-sm font-medium ${isToday ? 'text-white' : 'text-gray-700'}`}>{day}</span>
                         {jobInfo && (
                           <div className={`w-2 h-2 rounded-full mt-0.5 ${jobInfo.status === 'In Transit' ? 'bg-yellow-500' :
-                              jobInfo.status === 'Active' ? 'bg-blue-500' :
-                                jobInfo.status === 'Completed' ? 'bg-green-500' :
-                                  'bg-orange-400'
+                            jobInfo.status === 'Active' ? 'bg-blue-500' :
+                              jobInfo.status === 'Completed' ? 'bg-green-500' :
+                                'bg-orange-400'
                             }`} />
                         )}
                       </div>
@@ -364,7 +364,7 @@ export default function MyJobs() {
               <div className="space-y-6">
                 {/* Route Map */}
                 <div className="bg-white rounded-xl border border-gray-200 p-6">
-                  <h2 className="text-lg font-semibold text-gray-900 mb-4">🗺️ Zimbabwe Route Network</h2>
+                  <h2 className="text-lg font-semibold text-gray-900 mb-4">Zimbabwe Route Network</h2>
                   <div className="relative bg-gradient-to-br from-green-50 to-emerald-50 rounded-xl p-6 overflow-hidden" style={{ minHeight: '300px' }}>
                     <svg viewBox="0 0 500 400" className="w-full h-auto">
                       {/* Background */}
@@ -422,7 +422,7 @@ export default function MyJobs() {
 
                 {/* Optimized Routes */}
                 <div className="bg-white rounded-xl border border-gray-200 p-6">
-                  <h2 className="text-lg font-semibold text-gray-900 mb-1">🚀 Optimized Route Suggestions</h2>
+                  <h2 className="text-lg font-semibold text-gray-900 mb-1">Optimized Route Suggestions</h2>
                   <p className="text-sm text-gray-500 mb-4">Multi-stop routes to maximize your earnings and minimize fuel costs</p>
                   <div className="space-y-4">
                     {ROUTE_SUGGESTIONS.map((route, idx) => (

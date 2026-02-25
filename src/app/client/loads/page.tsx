@@ -169,13 +169,13 @@ export default function MyLoads() {
             {/* Stats */}
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
               {[
-                { label: 'Active Loads', value: activeLoads.length, icon: '📦' },
-                { label: 'Total Bids', value: totalBids, icon: '📩' },
-                { label: 'Completed', value: completedLoads.length, icon: '✅' },
-                { label: 'Total Spent', value: `$${totalSpent.toLocaleString()}`, icon: '💰' },
+                { label: 'Active Loads', value: activeLoads.length, icon: '' },
+                { label: 'Total Bids', value: totalBids, icon: '' },
+                { label: 'Completed', value: completedLoads.length, icon: '' },
+                { label: 'Total Spent', value: `$${totalSpent.toLocaleString()}`, icon: '' },
               ].map(s => (
                 <div key={s.label} className="bg-white rounded-xl border border-gray-200 p-4">
-                  <p className="text-sm text-gray-600">{s.icon} {s.label}</p>
+                  <p className="text-sm text-gray-600">{s.label}</p>
                   <p className="text-2xl font-bold text-gray-900">{s.value}</p>
                 </div>
               ))}
@@ -204,8 +204,8 @@ export default function MyLoads() {
                       key={opt}
                       onClick={() => setStatusFilter(opt)}
                       className={`px-3 py-1.5 text-sm rounded-full whitespace-nowrap transition-all ${statusFilter === opt
-                          ? 'bg-[#3f2a52] text-white'
-                          : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                        ? 'bg-[#3f2a52] text-white'
+                        : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                         }`}
                     >
                       {opt}

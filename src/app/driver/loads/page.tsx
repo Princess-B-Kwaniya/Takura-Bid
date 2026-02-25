@@ -59,7 +59,7 @@ function LoadCard({ load, bookmarked, onToggleBookmark }: { load: LoadWithClient
       {load.urgency === 'Urgent' && (
         <div className="flex items-center space-x-2 mb-3 pb-3 border-b border-red-100">
           <div className="w-2 h-2 bg-red-500 rounded-full animate-pulse" />
-          <span className="text-sm font-semibold text-red-700">⚡ Urgent Load — Immediate pickup required</span>
+          <span className="text-sm font-semibold text-red-700">Urgent Load — Immediate pickup required</span>
         </div>
       )}
 
@@ -274,7 +274,7 @@ export default function LoadBoard() {
                         : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                         }`}
                     >
-                      {opt === 'Urgent' ? '⚡ Urgent Only' : opt}
+                      {opt === 'Urgent' ? 'Urgent Only' : opt}
                     </button>
                   ))}
                   <button

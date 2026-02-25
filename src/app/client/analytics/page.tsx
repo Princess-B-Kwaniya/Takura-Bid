@@ -64,15 +64,12 @@ export default function ClientAnalytics() {
         {/* KPI Cards */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
           {[
-            { label: 'Total Shipping Costs', value: `$${KPI.totalCost.toLocaleString()}`, icon: '💰', change: '-12% vs last quarter', changeColor: 'text-green-600' },
-            { label: 'On-Time Delivery', value: `${KPI.onTime}%`, icon: '📦', change: '+4% vs last quarter', changeColor: 'text-green-600' },
-            { label: 'Total Shipments', value: KPI.shipments, icon: '🚛', change: '+8 this month', changeColor: 'text-blue-600' },
-            { label: 'Avg Cost/Mile', value: `$${KPI.costPerMile}`, icon: '📊', change: '-$0.15 vs avg', changeColor: 'text-green-600' },
+            { label: 'Total Shipping Costs', value: `$${KPI.totalCost.toLocaleString()}`, icon: '', change: '-12% vs last quarter', changeColor: 'text-green-600' },
+            { label: 'On-Time Delivery', value: `${KPI.onTime}%`, icon: '', change: '+4% vs last quarter', changeColor: 'text-green-600' },
+            { label: 'Total Shipments', value: KPI.shipments, icon: '', change: '+8 this month', changeColor: 'text-blue-600' },
+            { label: 'Avg Cost/Mile', value: `$${KPI.costPerMile}`, icon: '', change: '-$0.15 vs avg', changeColor: 'text-green-600' },
           ].map(k => (
             <div key={k.label} className="bg-white rounded-xl border border-gray-200 p-5">
-              <div className="flex items-center justify-between mb-2">
-                <span className="text-2xl">{k.icon}</span>
-              </div>
               <p className="text-2xl font-bold text-gray-900 mb-1">{k.value}</p>
               <p className="text-sm text-gray-600">{k.label}</p>
               <p className={`text-xs mt-1 font-medium ${k.changeColor}`}>{k.change}</p>
@@ -241,7 +238,6 @@ export default function ClientAnalytics() {
           <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
             {PERFORMANCE.map(p => (
               <div key={p.label} className="text-center">
-                <div className="text-3xl mb-2">{p.icon}</div>
                 <div className={`text-2xl font-bold mb-1 ${p.color}`}>{p.value}</div>
                 <p className="text-sm text-gray-600">{p.label}</p>
               </div>

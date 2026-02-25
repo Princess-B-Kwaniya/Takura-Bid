@@ -14,13 +14,17 @@ interface AnalyticsData {
 }
 
 export default function ClientAnalytics() {
-  const { loading: authLoading } = useAuth()
+  const { user, loading: authLoading } = useAuth()
   const [data, setData] = useState<AnalyticsData | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
     if (authLoading) return
+    if (!user || user.role !== 'CLIENT') {
+      setLoading(false)
+      return
+    }
     fetch('/api/analytics/client')
       .then(r => r.json())
       .then(d => {
@@ -32,7 +36,7 @@ export default function ClientAnalytics() {
         setError('Failed to fetch analytics data')
         setLoading(false)
       })
-  }, [authLoading])
+  }, [authLoading, user])
 
   if (loading) {
     return (

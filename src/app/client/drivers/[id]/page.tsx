@@ -29,7 +29,7 @@ async function getDriverReviews(driverId: string): Promise<Review[]> {
   if (error || !reviews) return []
 
   // Fetch reviewer names
-  const reviewerIds = [...new Set(reviews.map(r => r.reviewer_id))]
+  const reviewerIds = Array.from(new Set(reviews.map(r => r.reviewer_id)))
   const { data: reviewers } = await supabase
     .from('users')
     .select('user_id, name, company_name')

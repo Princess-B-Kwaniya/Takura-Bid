@@ -5,10 +5,18 @@ const PUBLIC_ROUTES = ['/', '/auth/login', '/auth/signup']
 export function middleware(request: NextRequest) {
   const pathname = request.nextUrl.pathname
 
+  const cookieStore = request.cookies
+  const userId = cookieStore.get('takura_user')?.value
+
+  // PUBLIC_ROUTES check
   if (PUBLIC_ROUTES.includes(pathname)) return NextResponse.next()
 
-  const userId = request.cookies.get('takura_user')?.value
   if (!userId) {
+    // If it's an API request, return 401 instead of redirecting
+    if (pathname.startsWith('/api/')) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+
     const loginUrl = request.nextUrl.clone()
     loginUrl.pathname = '/auth/login'
     return NextResponse.redirect(loginUrl)

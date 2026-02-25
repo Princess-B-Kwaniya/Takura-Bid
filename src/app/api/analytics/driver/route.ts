@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
-import { getCurrentUser } from '@/lib/queries/users'
+import { getCurrentUser } from '@/lib/queries/auth'
 
 export async function GET(req: NextRequest) {
     const user = await getCurrentUser()

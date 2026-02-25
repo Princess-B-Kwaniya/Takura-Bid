@@ -170,7 +170,7 @@ export default function LoadBoard() {
       const next = new Set(prev)
       if (next.has(id)) next.delete(id)
       else next.add(id)
-      localStorage.setItem('driver_bookmarked_loads', JSON.stringify([...next]))
+      localStorage.setItem('driver_bookmarked_loads', JSON.stringify(Array.from(next)))
       return next
     })
   }
@@ -270,8 +270,8 @@ export default function LoadBoard() {
                       key={opt}
                       onClick={() => setUrgencyFilter(opt)}
                       className={`px-3 py-1.5 text-sm rounded-full whitespace-nowrap transition-all ${urgencyFilter === opt
-                          ? opt === 'Urgent' ? 'bg-red-600 text-white' : 'bg-[#3f2a52] text-white'
-                          : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                        ? opt === 'Urgent' ? 'bg-red-600 text-white' : 'bg-[#3f2a52] text-white'
+                        : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                         }`}
                     >
                       {opt === 'Urgent' ? '⚡ Urgent Only' : opt}
@@ -280,8 +280,8 @@ export default function LoadBoard() {
                   <button
                     onClick={() => setShowBookmarked(!showBookmarked)}
                     className={`px-3 py-1.5 text-sm rounded-full whitespace-nowrap transition-all ${showBookmarked
-                        ? 'bg-orange-500 text-white'
-                        : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                      ? 'bg-orange-500 text-white'
+                      : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                       }`}
                   >
                     <svg className="w-4 h-4 inline mr-1" fill={showBookmarked ? 'currentColor' : 'none'} viewBox="0 0 24 24" stroke="currentColor">

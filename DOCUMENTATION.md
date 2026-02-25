@@ -350,22 +350,27 @@ The project was organised into the following sequential phases:
 
 **Table 1.5 — Project Gantt Chart**
 
+```mermaid
+gantt
+    title TakuraBid Project Schedule
+    dateFormat  YYYY-MM-DD
+    section Requirements
+    Requirements Elicitation      :req,  2024-02-01, 3w
+    section Analysis
+    System Analysis               :ana,  after req,  3w
+    section Design
+    System Design                 :des,  after ana,  3w
+    section Implementation
+    Database Implementation       :db,   after des,  3w
+    Backend Implementation        :be,   after des,  4w
+    Frontend Implementation       :fe,   after db,   4w
+    section Quality
+    Integration                   :int,  after be,   3w
+    Testing                       :test, after int,  3w
+    section Documentation
+    Documentation                 :doc,  after test, 5w
+    Review and Submission         :rev,  after doc,  2w
 ```
-PHASE                        | W1 | W2 | W3 | W4 | W5 | W6 | W7 | W8 | W9 | W10| W11| W12| W13| W14| W15| W16|
------------------------------|----|----|----|----|----|----|----|----|----|----|----|----|----|----|----|----|
-Requirements Elicitation     | ## | ## | ## |    |    |    |    |    |    |    |    |    |    |    |    |    |
-System Analysis              |    |    | ## | ## | ## |    |    |    |    |    |    |    |    |    |    |    |
-System Design                |    |    |    |    | ## | ## | ## |    |    |    |    |    |    |    |    |    |
-Database Implementation      |    |    |    |    |    | ## | ## | ## |    |    |    |    |    |    |    |    |
-Backend Implementation       |    |    |    |    |    |    | ## | ## | ## | ## |    |    |    |    |    |    |
-Frontend Implementation      |    |    |    |    |    |    |    | ## | ## | ## | ## |    |    |    |    |    |
-Integration                  |    |    |    |    |    |    |    |    |    | ## | ## | ## |    |    |    |    |
-Testing                      |    |    |    |    |    |    |    |    |    |    | ## | ## | ## |    |    |    |
-Documentation                |    |    |    |    |    |    |    |    |    |    |    | ## | ## | ## | ## |    |
-Review and Submission        |    |    |    |    |    |    |    |    |    |    |    |    |    |    | ## | ## |
-```
-
-*## denotes active phase weeks.*
 
 ---
 
@@ -543,63 +548,55 @@ The existing freight procurement system in Zimbabwe's domestic market is charact
 
 ### Figure 3.1 — System Context Diagram (Existing System)
 
-```
-                        +-----------------+
-                        |                 |
-    [CARGO OWNER] ----> | INFORMAL FREIGHT | ----> [TRUCK DRIVER]
-         |              |    PROCUREMENT  |             |
-         |              |     SYSTEM      |             |
-         +------------->|                 |<------------+
-                        +-----------------+
-                               |
-                        [VERBAL AGREEMENT]
-                               |
-                        [CASH SETTLEMENT]
+```mermaid
+flowchart LR
+    CO(["Cargo Owner"])
+    TD(["Truck Driver"])
+    IFP[/"Informal Freight\nProcurement System"\]
+
+    CO -->|"Load Requirements"| IFP
+    IFP -->|"Verbal Agreement"| CO
+    TD -->|"Rate Proposal + Availability"| IFP
+    IFP -->|"Driver Assignment"| TD
+    CO -->|"Cash Payment on Delivery"| TD
 ```
 
 The existing system context diagram depicts a single-process system (informal freight procurement) with two external entities (cargo owner and truck driver) communicating through the system via entirely informal channels. No digital data stores are involved.
 
 ### Figure 3.2 — Data Flow Diagram — Level 0 (Existing System)
 
-```
-[Cargo Owner] ----(Load Requirements)----> +---------------------------+
-                                           |                           |
-[Cargo Owner] <---(Verbal Agreement)-----  | 1.0                       |
-                                           | Informal Freight          | ----(Driver Assignment)----> [Truck Driver]
-[Truck Owner] ----(Rate Proposal)-------> | Procurement Process       |
-                                           |                           | <---(Availability)---------- [Truck Driver]
-[Cargo Owner] ----(Cash Payment)--------> |                           |
-                                           +---------------------------+
+```mermaid
+flowchart TD
+    CO(["Cargo Owner"])
+    TD(["Truck Driver"])
+    P0(["1.0\nInformal Freight\nProcurement Process"])
+
+    CO -->|"Load Requirements"| P0
+    P0 -->|"Verbal Agreement"| CO
+    TD -->|"Rate Proposal"| P0
+    TD -->|"Availability"| P0
+    P0 -->|"Driver Assignment"| TD
+    CO -->|"Cash Payment"| P0
 ```
 
 ### Figure 3.3 — Data Flow Diagram — Level 1 (Existing System)
 
-```
-[Cargo Owner]
-     |
-     | (1) Load details communicated verbally
-     v
-[1.1 Load Requirement Communication]
-     |
-     | (2) Dispatcher contacts driver list
-     v
-[1.2 Driver Availability Check] <---------- [Driver Contact List (informal)]
-     |
-     | (3) Driver confirms availability
-     v
-[1.3 Rate Negotiation]
-     |
-     | (4) Verbal agreement reached
-     v
-[1.4 Agreement Confirmation] -----------> [Cargo Owner] (verbal confirmation)
-     |
-     | (5) Delivery instructions
-     v
-[1.5 Delivery Execution] -------------> [Truck Driver]
-     |
-     | (6) Cash payment on delivery
-     v
-[1.6 Settlement] <------------------- [Cargo Owner]
+```mermaid
+flowchart TD
+    CO(["Cargo Owner"])
+    TD(["Truck Driver"])
+    DCL[("Driver Contact List\n(informal)")]
+
+    CO -->|"1. Load details communicated verbally"| P1["1.1 Load Requirement\nCommunication"]
+    P1 -->|"2. Dispatcher contacts driver list"| P2["1.2 Driver Availability\nCheck"]
+    DCL -->|"Contacts"| P2
+    P2 -->|"3. Driver confirms availability"| P3["1.3 Rate Negotiation"]
+    P3 -->|"4. Verbal agreement reached"| P4["1.4 Agreement\nConfirmation"]
+    P4 -->|"Verbal confirmation"| CO
+    P4 -->|"5. Delivery instructions"| P5["1.5 Delivery\nExecution"]
+    P5 -->|"Cargo delivered"| TD
+    CO -->|"6. Cash payment on delivery"| P6["1.6 Settlement"]
+    P6 -->|"Payment received"| TD
 ```
 
 ## 3.4 Evaluation of Alternative Systems
@@ -660,72 +657,68 @@ A purpose-built full-stack web application, designed specifically for the freigh
 
 ### Figure 3.4 — Use Case Diagram — CLIENT Role
 
-```
-+-------------------------------------------------------+
-|                     TakuraBid System                  |
-|                                                       |
-|  +------------------+   +------------------------+   |
-|  | Register Account |   | Login / Authenticate   |   |
-|  +------------------+   +------------------------+   |
-|                                                       |
-|  +------------------+   +------------------------+   |
-|  | Post Freight Load|   | View Posted Loads      |   |
-|  +------------------+   +------------------------+   |
-|                                                       |
-|  +------------------+   +------------------------+   |
-|  | Review Bids      |   | Accept Bid / Hire      |   |
-|  +------------------+   +------------------------+   |
-|                                                       |
-|  +------------------+   +------------------------+   |
-|  | Send Direct Offer|   | Message Driver         |   |
-|  +------------------+   +------------------------+   |
-|                                                       |
-|  +------------------+   +------------------------+   |
-|  | View Analytics   |   | Submit Review          |   |
-|  +------------------+   +------------------------+   |
-|                                                       |
-|  +------------------+                               |
-|  | Update Profile   |                               |
-|  +------------------+                               |
-+-------------------------------------------------------+
-         ^
-         |
-    [CLIENT USER]
+```mermaid
+flowchart TD
+    CLIENT(["CLIENT USER"])
+
+    subgraph System["TakuraBid System"]
+        UC1(["Register Account"])
+        UC2(["Login / Authenticate"])
+        UC3(["Post Freight Load"])
+        UC4(["View Posted Loads"])
+        UC5(["Review Bids"])
+        UC6(["Accept Bid / Hire Driver"])
+        UC7(["Send Direct Job Offer"])
+        UC8(["Message Driver"])
+        UC9(["View Analytics Dashboard"])
+        UC10(["Submit Review"])
+        UC11(["Update Profile"])
+    end
+
+    CLIENT --> UC1
+    CLIENT --> UC2
+    CLIENT --> UC3
+    CLIENT --> UC4
+    CLIENT --> UC5
+    CLIENT --> UC6
+    CLIENT --> UC7
+    CLIENT --> UC8
+    CLIENT --> UC9
+    CLIENT --> UC10
+    CLIENT --> UC11
 ```
 
 ### Figure 3.5 — Use Case Diagram — DRIVER Role
 
-```
-+-------------------------------------------------------+
-|                     TakuraBid System                  |
-|                                                       |
-|  +------------------+   +------------------------+   |
-|  | Register Account |   | Login / Authenticate   |   |
-|  +------------------+   +------------------------+   |
-|                                                       |
-|  +------------------+   +------------------------+   |
-|  | Browse Load Board|   | View Load Detail       |   |
-|  +------------------+   +------------------------+   |
-|                                                       |
-|  +------------------+   +------------------------+   |
-|  | Submit Bid       |   | Accept Job Offer       |   |
-|  +------------------+   +------------------------+   |
-|                                                       |
-|  +------------------+   +------------------------+   |
-|  | View My Jobs     |   | Message Client         |   |
-|  +------------------+   +------------------------+   |
-|                                                       |
-|  +------------------+   +------------------------+   |
-|  | View Analytics   |   | Submit Review          |   |
-|  +------------------+   +------------------------+   |
-|                                                       |
-|  +------------------+                               |
-|  | Update Profile   |                               |
-|  +------------------+                               |
-+-------------------------------------------------------+
-         ^
-         |
-    [DRIVER USER]
+```mermaid
+flowchart TD
+    DRIVER(["DRIVER USER"])
+
+    subgraph System["TakuraBid System"]
+        UC1(["Register Account"])
+        UC2(["Login / Authenticate"])
+        UC3(["Browse Load Board"])
+        UC4(["View Load Detail"])
+        UC5(["Submit Bid"])
+        UC6(["Accept Job Offer"])
+        UC7(["View My Jobs"])
+        UC8(["Message Client"])
+        UC9(["View Analytics Dashboard"])
+        UC10(["Submit Review"])
+        UC11(["Update Profile"])
+    end
+
+    DRIVER --> UC1
+    DRIVER --> UC2
+    DRIVER --> UC3
+    DRIVER --> UC4
+    DRIVER --> UC5
+    DRIVER --> UC6
+    DRIVER --> UC7
+    DRIVER --> UC8
+    DRIVER --> UC9
+    DRIVER --> UC10
+    DRIVER --> UC11
 ```
 
 ---
@@ -736,204 +729,190 @@ A purpose-built full-stack web application, designed specifically for the freigh
 
 ### Figure 4.1 — System Context Diagram (Proposed System)
 
-```
-                              +---------------------------+
-                              |                           |
-   [CLIENT USER] ----------> |     TakuraBid Platform    | <---------- [DRIVER USER]
-         |                   |                           |                   |
-         | Posts loads,      |  Next.js 16 Full-Stack    |  Browses loads,   |
-         | reviews bids,     |  Web Application          |  submits bids,    |
-         | accepts bids      |                           |  accepts jobs     |
-         |                   +---------------------------+                   |
-         |                              |                                    |
-         |                    [Supabase PostgreSQL]                          |
-         |                              |                                    |
-         +---------------- [Persistent Data Layer] --------------------------+
+```mermaid
+flowchart LR
+    CLIENT(["CLIENT USER\n\nPosts loads\nReviews bids\nAccepts bids"])
+    DRIVER(["DRIVER USER\n\nBrowses loads\nSubmits bids\nAccepts jobs"])
+    DB[("Supabase\nPostgreSQL\nData Layer")]
+
+    CLIENT -->|"Load specs, bid decisions"| TB["TakuraBid Platform\nNext.js 16 Full-Stack\nWeb Application"]
+    DRIVER -->|"Bid proposals, job confirmations"| TB
+    TB -->|"Bid summaries, job records"| CLIENT
+    TB -->|"Job offers, assignments"| DRIVER
+    TB <-->|"Supabase JS SDK\nREST + PostgREST"| DB
 ```
 
 ## 4.2 Data Flow Diagrams — Proposed System
 
 ### Figure 4.2 — Data Flow Diagram — Level 0 (Proposed System)
 
-```
-[CLIENT] ----(Load Specification)-----------> +----------------------+
-                                              |                      |
-[CLIENT] <---(Bid Summary, Job Record)------  |   0.0                |
-                                              |   TakuraBid          |
-[DRIVER] ----(Bid Proposal)---------------->  |   Platform           | -----> [Supabase PostgreSQL DB]
-                                              |                      |
-[DRIVER] <---(Job Offer, Assignment)-------   |                      |
-                                              +----------------------+
-[ANY USER] ----(Authentication Request)---->
-[ANY USER] <---(Session Cookie)------------
+```mermaid
+flowchart TD
+    CLIENT(["CLIENT"])
+    DRIVER(["DRIVER"])
+    ANYUSER(["ANY AUTHENTICATED USER"])
+    DB[("Supabase PostgreSQL DB")]
+
+    CLIENT -->|"Load Specification"| P0["0.0 TakuraBid Platform"]
+    P0 -->|"Bid Summary + Job Record"| CLIENT
+    DRIVER -->|"Bid Proposal"| P0
+    P0 -->|"Job Offer + Assignment"| DRIVER
+    ANYUSER -->|"Authentication Request"| P0
+    P0 -->|"Session Cookie"| ANYUSER
+    P0 <-->|"Reads / Writes"| DB
 ```
 
 ### Figure 4.3 — Data Flow Diagram — Level 1 (Proposed System)
 
-```
-[CLIENT] -----(Registration Data)----> [1.1 User Registration] ----(User Record)----> [D1: users]
-[CLIENT] -----(Credentials)----------> [1.2 Authentication]    ----(Session Cookie)---> [CLIENT]
+```mermaid
+flowchart TD
+    CLIENT(["CLIENT"])
+    DRIVER(["DRIVER"])
+    BOTH(["CLIENT / DRIVER"])
+    ANY(["ANY USER"])
 
-[CLIENT] -----(Load Specification)---> [2.1 Load Posting]      ----(Load Record)-----> [D2: loads]
-[DRIVER] -----(Load Query)-----------> [2.2 Load Board]        <---(Load Records)----- [D2: loads]
+    D1[("D1: users")]
+    D2[("D2: loads")]
+    D3[("D3: bids")]
+    D4[("D4: jobs")]
+    D5[("D5: messages")]
+    D6[("D6: direct_messages")]
 
-[DRIVER] -----(Bid Data)-------------> [3.1 Bid Submission]    ----(Bid Record)------> [D3: bids]
-[CLIENT] -----(Bid Review Request)---> [3.2 Bid Review]        <---(Bid Records)------ [D3: bids]
+    CLIENT -->|"Registration Data"| P11["1.1 User Registration"]
+    P11 -->|"User Record"| D1
+    CLIENT -->|"Credentials"| P12["1.2 Authentication"]
+    P12 -->|"Session Cookie"| CLIENT
 
-[CLIENT] -----(Bid Accept Request)---> [4.1 Bid Acceptance]    ----(Job Record)------> [D4: jobs]
-                                       [4.1 Bid Acceptance]    ----(Bid Updates)-----> [D3: bids]
-                                       [4.1 Bid Acceptance]    ----(Load Update)-----> [D2: loads]
+    CLIENT -->|"Load Specification"| P21["2.1 Load Posting"]
+    P21 -->|"Load Record"| D2
+    DRIVER -->|"Load Query"| P22["2.2 Load Board"]
+    D2 -->|"Load Records"| P22
 
-[DRIVER] -----(Job Accept Request)---> [4.2 Job Confirmation]  ----(Job Update)------> [D4: jobs]
+    DRIVER -->|"Bid Data"| P31["3.1 Bid Submission"]
+    P31 -->|"Bid Record"| D3
+    CLIENT -->|"Bid Review Request"| P32["3.2 Bid Review"]
+    D3 -->|"Bid Records"| P32
 
-[CLIENT/DRIVER] --(Message Data)-----> [5.1 Messaging]         ----(Message Record)--> [D5: messages]
-[ANY USER] -----(DM Data)-----------> [5.2 Direct Messaging]   ----(DM Record)-------> [D6: direct_messages]
+    CLIENT -->|"Bid Accept Request"| P41["4.1 Bid Acceptance"]
+    P41 -->|"Job Record"| D4
+    P41 -->|"Bid Updates"| D3
+    P41 -->|"Load Update"| D2
+
+    DRIVER -->|"Job Accept Request"| P42["4.2 Job Confirmation"]
+    P42 -->|"Job Update"| D4
+
+    BOTH -->|"Message Data"| P51["5.1 Job Messaging"]
+    P51 -->|"Message Record"| D5
+    ANY -->|"DM Data"| P52["5.2 Direct Messaging"]
+    P52 -->|"DM Record"| D6
 ```
 
 ## 4.3 Activity Diagrams
 
 ### Figure 4.4 — Activity Diagram — Load Posting and Bidding Lifecycle
 
-```
-[CLIENT]                          [SYSTEM]                         [DRIVER]
-
-Start
-  |
-  v
-Login to Platform -----------> Validate Session Cookie
-  |                                      |
-  v                                      v
-Post Freight Load -----------> Validate Role = CLIENT
-  |                            Insert Load (status: 'In Bidding')
-  |                                      |
-  |                                      v
-  |                            Notify Available Drivers ---------> Browse Load Board
-  |                                                                      |
-  |                                                                      v
-  |                                                               View Load Detail
-  |                                                                      |
-  |                                                                      v
-  |                                                               Submit Bid (amount, message)
-  |                                      <----------------------- Validate Role = DRIVER
-  |                            Check: No existing bid from driver
-  |                            Check: Load still 'In Bidding'
-  |                            Insert Bid (status: 'Pending')
-  |                                      |
-  v                                      v
-Review Submitted Bids <-------- Fetch All Bids for Load
-  |
-  v
-Accept Preferred Bid ---------> Validate Role = CLIENT
-                                Update Accepted Bid (status: 'Accepted')
-                                Update All Other Bids (status: 'Rejected')
-                                Update Load (status: 'Assigned')
-                                Insert Job (status: 'Pending')
-                                         |
-                                         v
-                                Notify Assigned Driver ---------> View Job Offer
-                                                                      |
-                                                                      v
-                                                               Accept Job Offer
-                                         <----------------------- Validate Role = DRIVER
-                                Update Job (status: 'Active')
-                                         |
-                                         v
-                                Activate Messaging Channel
-                                         |
-End
+```mermaid
+flowchart TD
+    Start([Start]) --> A["CLIENT: Login to Platform"]
+    A --> B{"Valid Session\nCookie?"}
+    B -->|No| C["Redirect to /auth/login"]
+    C --> A
+    B -->|Yes| D["CLIENT: Post Freight Load"]
+    D --> E["System: Validate CLIENT Role"]
+    E --> F["System: Insert Load\nstatus: In Bidding"]
+    F --> G["DRIVER: Browse Load Board"]
+    G --> H["DRIVER: View Load Detail"]
+    H --> I["DRIVER: Submit Bid\namount + cover message"]
+    I --> J["System: Validate DRIVER Role"]
+    J --> K{"Existing bid\nfrom this driver?"}
+    K -->|Yes| L["Return HTTP 409\nDuplicate bid rejected"]
+    K -->|No| M{"Load still\nIn Bidding?"}
+    M -->|No| N["Return HTTP 409\nLoad no longer open"]
+    M -->|Yes| O["System: Insert Bid\nstatus: Pending"]
+    O --> P["CLIENT: Review All Submitted Bids"]
+    P --> Q["CLIENT: Accept Preferred Bid"]
+    Q --> R["System: Validate CLIENT Role\nVerify load ownership"]
+    R --> S["System: Update Accepted Bid → Accepted"]
+    S --> T["System: Update Remaining Bids → Rejected"]
+    T --> U["System: Update Load → Assigned"]
+    U --> V["System: Insert Job Record\nstatus: Pending"]
+    V --> W["System: Notify Assigned Driver"]
+    W --> X["DRIVER: View and Accept Job Offer"]
+    X --> Y["System: Update Job → Active"]
+    Y --> Z["Messaging Channel Activated"]
+    Z --> End([End])
 ```
 
 ### Figure 4.5 — Activity Diagram — Job Confirmation and Execution
 
-```
-[DRIVER]                          [SYSTEM]                         [CLIENT]
-
-Receive Job Notification
-  |
-  v
-Review Job Details -----------> Fetch Job Record + Load Details
-  |
-  v
-Accept Job Offer ------------> Validate: job.status == 'Pending'
-                               Validate: driver_id == authenticated user
-                               Update Job (status: 'Active')
-                               Generate Notification for CLIENT
-                                         |
-                                         v
-                               <----------------------- CLIENT Notified: Job Active
-  |
-  v
-Begin Freight Delivery
-  |
-  v
-[External delivery execution — system not active during transit]
-  |
-  v
-Mark Job: In Transit ---------> Update Job (status: 'In Transit')
-                                Update Load (status: 'In Transit')
-  |
-  v
-Complete Delivery
-  |
-  v
-Mark Job: Completed ----------> Update Job (status: 'Completed')
-                                Update Load (status: 'Completed')
-  |
-  v
-Submit Review <--------------- Submit Review
-                               Insert Review Record (bidirectional)
-End
+```mermaid
+flowchart TD
+    Start([Start]) --> A["DRIVER: Receive Job Notification"]
+    A --> B["DRIVER: Review Job Details"]
+    B --> C["DRIVER: Accept Job Offer"]
+    C --> D{"job.status\n== Pending?"}
+    D -->|No| E["Return Error: Invalid State Transition"]
+    D -->|Yes| F{"driver_id matches\nauthenticated user?"}
+    F -->|No| G["Return HTTP 403 Forbidden"]
+    F -->|Yes| H["System: Update Job → Active"]
+    H --> I["System: Notify CLIENT — Job Active"]
+    I --> J["DRIVER: Begin Freight Delivery\n(external, system not active)"]
+    J --> K["DRIVER: Mark Job In Transit"]
+    K --> L["System: Update Job → In Transit"]
+    L --> M["System: Update Load → In Transit"]
+    M --> N["DRIVER: Complete Delivery"]
+    N --> O["System: Update Job → Completed"]
+    O --> P["System: Update Load → Completed"]
+    P --> Q["CLIENT and DRIVER: Submit Reviews"]
+    Q --> R["System: Insert Review Records\n(bidirectional)"]
+    R --> End([End])
 ```
 
 ## 4.4 Architectural Design
 
 ### Figure 4.7 — Architectural Diagram — Monolithic Full-Stack Deployment
 
-```
-+---------------------------------------------------------------------+
-|                        CLIENT BROWSER                               |
-|  React 19 Client Components — Interactive UI                        |
-|  AuthProvider (Context API) — Session Management                    |
-|  Tailwind CSS — Utility-first Styling                               |
-+------------------------------+--------------------------------------+
-                               | HTTPS (same-origin)
-                               |
-+------------------------------v--------------------------------------+
-|              NEXT.JS 16 APP ROUTER (Node.js Runtime)               |
-|                                                                     |
-|  +------------------------+   +----------------------------------+  |
-|  | /src/app/(pages)/      |   | /src/app/api/(routes)/          |  |
-|  | React Server Components|   | Route Handlers — REST Endpoints  |  |
-|  | + Client Components    |   | Server-only — no browser access  |  |
-|  +------------------------+   +----------------------------------+  |
-|                                                                     |
-|  +----------------------------------------------------------------+  |
-|  | /src/middleware.ts                                             |  |
-|  | Edge Middleware — Cookie Auth Enforcement                      |  |
-|  | Intercepts all non-static requests                             |  |
-|  | Returns HTTP 401 / HTTP 302 for unauthenticated requests       |  |
-|  +----------------------------------------------------------------+  |
-|                                                                     |
-|  +----------------------------------------------------------------+  |
-|  | /src/lib/                                                      |  |
-|  | supabase/server.ts — Server-side Supabase Factory              |  |
-|  | supabase/client.ts — Browser-side Supabase Singleton           |  |
-|  | queries/auth.ts — getCurrentUser(req) — Cookie Resolution      |  |
-|  | types/database.ts — TypeScript Type Definitions                |  |
-|  +----------------------------------------------------------------+  |
-|                                                                     |
-+------------------------------+--------------------------------------+
-                               | Supabase JS SDK (REST + PostgREST)
-                               |
-+------------------------------v--------------------------------------+
-|              SUPABASE HOSTED POSTGRESQL                            |
-|                                                                     |
-|  users            loads            bids             jobs           |
-|  messages         direct_messages  notifications    reviews        |
-|                                                                     |
-|  RLS: Disabled — Access control at application layer               |
-|  FK constraints: Enforced across all relational associations        |
-+---------------------------------------------------------------------+
+```mermaid
+flowchart TD
+    subgraph Browser["Client Browser"]
+        RC["React 19 Client Components\nInteractive UI"]
+        AP["AuthProvider — Context API\nSession Management"]
+        TW["Tailwind CSS\nUtility-first Styling"]
+    end
+
+    subgraph NextJS["Next.js 16 App Router — Node.js Runtime"]
+        subgraph Pages["/src/app/pages/"]
+            SC["Server + Client Components\nRole-protected page rendering"]
+        end
+        subgraph API["/src/app/api/routes/"]
+            RH["Route Handlers\nREST Endpoints — Server-only"]
+        end
+        subgraph MW["/src/middleware.ts"]
+            EM["Edge Middleware\nCookie Auth Enforcement\nHTTP 401 / HTTP 302 for unauthenticated requests"]
+        end
+        subgraph Lib["/src/lib/"]
+            SBS["supabase/server.ts\nServer-side Supabase Factory"]
+            SBC["supabase/client.ts\nBrowser Supabase Singleton"]
+            Auth["queries/auth.ts\ngetCurrentUser(req)"]
+            Types["types/database.ts\nTypeScript Type Definitions"]
+        end
+    end
+
+    subgraph DB["Supabase Hosted PostgreSQL"]
+        T1[("users")]
+        T2[("loads")]
+        T3[("bids")]
+        T4[("jobs")]
+        T5[("messages")]
+        T6[("direct_messages")]
+        T7[("notifications")]
+        T8[("reviews")]
+    end
+
+    Browser -->|"HTTPS same-origin requests"| NextJS
+    EM -->|"Intercepts all non-static requests"| Pages
+    EM -->|"Intercepts all non-static requests"| API
+    RH -->|"Supabase JS SDK\nREST + PostgREST"| DB
 ```
 
 ### 4.4.1 Hardware Architecture
@@ -954,46 +933,105 @@ All client-server communication occurs over HTTPS. Same-origin request architect
 
 ### Figure 4.8 — Entity-Relationship Diagram
 
-```
-+------------------+          +------------------+          +------------------+
-|      users       |          |      loads        |          |       bids        |
-|------------------|          |------------------|          |------------------|
-| user_id (PK)     |1--------N| load_id (PK)     |1--------N| bid_id (PK)      |
-| name             |          | client_id (FK)   |          | load_id (FK)     |
-| email            |          | cargo_type       |          | driver_id (FK)   |
-| password_hash    |          | weight_kg        |          | amount_usd       |
-| role             |          | origin_city      |          | message          |
-| phone            |          | destination_city |          | status           |
-| company_name     |          | distance_km      |          | submitted_at     |
-| vehicle_type     |          | budget_usd       |          +------------------+
-| driver_ranking   |          | pickup_date      |
-| profile_views    |          | delivery_date    |          +------------------+
-| created_at       |          | urgency          |          |      jobs         |
-+------------------+          | requirements[]   |          |------------------|
-        |1                    | assigned_driver  |1--------1| job_id (PK)      |
-        |                     | status           |          | load_id (FK)     |
-        |N                    | created_at       |          | driver_id (FK)   |
-+------------------+          +------------------+          | client_id (FK)   |
-|    messages      |                                        | status           |
-|------------------|                                        | created_at       |
-| message_id (PK)  |          +------------------+          +------------------+
-| job_id (FK)      |          | direct_messages  |
-| sender_id (FK)   |          |------------------|          +------------------+
-| content          |          | dm_id (PK)       |          |   notifications  |
-| sent_at          |          | sender_id (FK)   |          |------------------|
-+------------------+          | recipient_id (FK)|          | notification_id  |
-                              | content          |          | user_id (FK)     |
-+------------------+          | read             |          | title            |
-|     reviews      |          | sent_at          |          | body             |
-|------------------|          +------------------+          | type             |
-| review_id (PK)   |                                        | read             |
-| job_id (FK)      |                                        | reference_id     |
-| reviewer_id (FK) |                                        | created_at       |
-| reviewee_id (FK) |                                        +------------------+
-| rating           |
-| comment          |
-| created_at       |
-+------------------+
+```mermaid
+erDiagram
+    users {
+        UUID user_id PK
+        TEXT name
+        TEXT email
+        TEXT password_hash
+        TEXT role
+        TEXT phone
+        TEXT company_name
+        TEXT vehicle_type
+        TEXT licence_number
+        NUMERIC driver_ranking
+        INTEGER profile_views
+        TIMESTAMPTZ created_at
+    }
+    loads {
+        TEXT load_id PK
+        UUID client_id FK
+        TEXT cargo_type
+        NUMERIC weight_kg
+        TEXT origin_city
+        TEXT destination_city
+        NUMERIC distance_km
+        NUMERIC budget_usd
+        DATE pickup_date
+        DATE delivery_date
+        TEXT urgency
+        UUID assigned_driver_id FK
+        TEXT status
+        TIMESTAMPTZ created_at
+    }
+    bids {
+        UUID bid_id PK
+        TEXT load_id FK
+        UUID driver_id FK
+        NUMERIC amount_usd
+        TEXT message
+        TEXT status
+        TIMESTAMPTZ submitted_at
+    }
+    jobs {
+        TEXT job_id PK
+        TEXT load_id FK
+        UUID driver_id FK
+        UUID client_id FK
+        NUMERIC agreed_rate_usd
+        TEXT status
+        TIMESTAMPTZ created_at
+    }
+    messages {
+        UUID message_id PK
+        TEXT job_id FK
+        UUID sender_id FK
+        TEXT content
+        TIMESTAMPTZ sent_at
+    }
+    direct_messages {
+        UUID dm_id PK
+        UUID sender_id FK
+        UUID recipient_id FK
+        TEXT content
+        BOOLEAN read
+        TIMESTAMPTZ sent_at
+    }
+    notifications {
+        UUID notification_id PK
+        UUID user_id FK
+        TEXT title
+        TEXT body
+        TEXT type
+        BOOLEAN read
+        TEXT reference_id
+        TIMESTAMPTZ created_at
+    }
+    reviews {
+        UUID review_id PK
+        TEXT job_id FK
+        UUID reviewer_id FK
+        UUID reviewee_id FK
+        INTEGER rating
+        TEXT comment
+        TIMESTAMPTZ created_at
+    }
+
+    users ||--o{ loads : "posts (client_id)"
+    users ||--o{ bids : "submits"
+    users ||--o{ jobs : "drives (driver_id)"
+    users ||--o{ jobs : "owns (client_id)"
+    users ||--o{ messages : "sends"
+    users ||--o{ direct_messages : "sends"
+    users ||--o{ direct_messages : "receives"
+    users ||--o{ notifications : "receives"
+    users ||--o{ reviews : "writes"
+    users ||--o{ reviews : "receives"
+    loads ||--o{ bids : "receives"
+    loads ||--o| jobs : "generates"
+    jobs ||--o{ messages : "scopes"
+    jobs ||--o{ reviews : "generates"
 ```
 
 ### 4.5.2 Database Schema Specification
@@ -1118,11 +1156,38 @@ All eight tables satisfy Third Normal Form (3NF):
 
 The system enforces the following status transition rules at the application layer:
 
+**Load Status Lifecycle**
+
+```mermaid
+stateDiagram-v2
+    [*] --> InBidding : Load Posted by CLIENT
+    InBidding --> Assigned : Bid Accepted by CLIENT
+    Assigned --> InTransit : Delivery Commenced
+    InTransit --> Completed : Delivery Confirmed
+
+    InBidding : In Bidding
+    InTransit : In Transit
 ```
-LOAD:  In Bidding  ->  Assigned  ->  In Transit  ->  Completed
-BID:   Pending     ->  Accepted
-       Pending     ->  Rejected
-JOB:   Pending     ->  Active    ->  In Transit  ->  Completed
+
+**Bid Status Lifecycle**
+
+```mermaid
+stateDiagram-v2
+    [*] --> Pending : Bid Submitted by DRIVER
+    Pending --> Accepted : CLIENT Accepts This Bid
+    Pending --> Rejected : CLIENT Accepts Another Bid
+```
+
+**Job Status Lifecycle**
+
+```mermaid
+stateDiagram-v2
+    [*] --> Pending : Job Created on Bid Acceptance
+    Pending --> Active : DRIVER Accepts Job Offer
+    Active --> InTransit : Delivery Commenced
+    InTransit --> Completed : Delivery Confirmed
+
+    InTransit : In Transit
 ```
 
 No backward state transitions are permitted. Each transition is gated by role validation in the corresponding Route Handler.

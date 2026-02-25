@@ -2,9 +2,13 @@
 
 import { useState } from 'react'
 import Link from 'next/link'
+import { useAuth } from '@/components/providers/AuthProvider'
 
 export default function HomePage() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
+  const { user } = useAuth()
+  const homeHref = user?.role === 'DRIVER' ? '/driver' : '/client'
+  const profileHref = user?.role === 'DRIVER' ? '/driver/profile' : '/client/profile'
 
   return (
     <div className="min-h-screen bg-white text-gray-900 font-sans selection:bg-[#3f2a52] selection:text-white">
@@ -24,12 +28,25 @@ export default function HomePage() {
           </div>
           
           <nav className="hidden md:flex items-center space-x-8">
-            <Link href="/auth/login" className="text-sm font-medium text-gray-600 hover:text-[#3f2a52] transition-colors">
-              Sign In
-            </Link>
-            <Link href="/auth/signup" className="text-sm font-medium text-white bg-[#3f2a52] px-5 py-2 rounded-full hover:bg-[#3f2a52]/90 transition-colors shadow-[0_4px_15px_rgba(63,42,82,0.25)]">
-              Get Started
-            </Link>
+            {user ? (
+              <>
+                <Link href={homeHref} className="text-sm font-medium text-gray-600 hover:text-[#3f2a52] transition-colors">
+                  Home
+                </Link>
+                <Link href={profileHref} className="text-sm font-medium text-white bg-[#3f2a52] px-5 py-2 rounded-full hover:bg-[#3f2a52]/90 transition-colors shadow-[0_4px_15px_rgba(63,42,82,0.25)]">
+                  Profile
+                </Link>
+              </>
+            ) : (
+              <>
+                <Link href="/auth/login" className="text-sm font-medium text-gray-600 hover:text-[#3f2a52] transition-colors">
+                  Sign In
+                </Link>
+                <Link href="/auth/signup" className="text-sm font-medium text-white bg-[#3f2a52] px-5 py-2 rounded-full hover:bg-[#3f2a52]/90 transition-colors shadow-[0_4px_15px_rgba(63,42,82,0.25)]">
+                  Get Started
+                </Link>
+              </>
+            )}
           </nav>
 
           <div className="md:hidden">
@@ -48,20 +65,41 @@ export default function HomePage() {
       {/* Mobile Menu Drawer */}
        <div className={`fixed inset-0 z-40 bg-white/90 backdrop-blur-xl transition-transform duration-300 md:hidden ${isMobileMenuOpen ? 'translate-x-0' : 'translate-x-full'}`}>
         <div className="flex flex-col items-center justify-center h-full space-y-8">
-          <Link 
-            href="/auth/login" 
-            onClick={() => setIsMobileMenuOpen(false)}
-            className="text-2xl font-bold text-gray-900 hover:text-[#3f2a52] transition-colors"
-          >
-            Sign In
-          </Link>
-          <Link 
-            href="/auth/signup" 
-            onClick={() => setIsMobileMenuOpen(false)}
-            className="text-2xl font-bold text-gray-900 hover:text-[#3f2a52] transition-colors"
-          >
-            Get Started
-          </Link>
+          {user ? (
+            <>
+              <Link
+                href={homeHref}
+                onClick={() => setIsMobileMenuOpen(false)}
+                className="text-2xl font-bold text-gray-900 hover:text-[#3f2a52] transition-colors"
+              >
+                Home
+              </Link>
+              <Link
+                href={profileHref}
+                onClick={() => setIsMobileMenuOpen(false)}
+                className="text-2xl font-bold text-gray-900 hover:text-[#3f2a52] transition-colors"
+              >
+                Profile
+              </Link>
+            </>
+          ) : (
+            <>
+              <Link
+                href="/auth/login"
+                onClick={() => setIsMobileMenuOpen(false)}
+                className="text-2xl font-bold text-gray-900 hover:text-[#3f2a52] transition-colors"
+              >
+                Sign In
+              </Link>
+              <Link
+                href="/auth/signup"
+                onClick={() => setIsMobileMenuOpen(false)}
+                className="text-2xl font-bold text-gray-900 hover:text-[#3f2a52] transition-colors"
+              >
+                Get Started
+              </Link>
+            </>
+          )}
         </div>
       </div>
 

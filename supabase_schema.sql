@@ -1,22 +1,13 @@
 -- ============================================================
--- TakuraBid — Complete Supabase Database Schema (FIXED)
+-- TakuraBid — Complete Supabase Database Schema
 -- Run this in the Supabase SQL Editor (https://supabase.com/dashboard)
 -- ============================================================
--- FIX APPLIED: All user ID columns are explicitly UUID.
--- The root cause was that user_id was being inferred as VARCHAR
--- when auth.users didn't exist or had a type mismatch, causing
--- downstream FK errors like:
---   "Key columns client_id and user_id are of incompatible types:
---    uuid and character varying"
---
--- Changes made:
---   1. users.user_id explicitly typed as UUID (no FK to auth.users
---      until sample data is done)
---   2. Removed password_hash and salt (Supabase Auth handles this)
---   3. All FK references to users(user_id) now work because types match
---   4. Added missing DELETE policies
---   5. Fixed bids UPDATE policy so clients can accept/reject bids
---   6. Re-add auth.users FK at the bottom (commented out for dev)
+-- CHANGES:
+--   1. users.user_id is explicitly UUID
+--   2. Added password TEXT column (plain text for dev — not for production)
+--   3. RLS disabled on all tables (app uses anon key + server auth)
+--   4. Rich sample reviews for all 10 drivers
+--   5. Sample data uses default password 'password123'
 -- ============================================================
 
 
@@ -62,9 +53,10 @@ CREATE TYPE urgency_level      AS ENUM ('Standard', 'Urgent');
 -- NOTE: user_id is explicitly UUID. The FK to auth.users(id) is added
 -- at the very end AFTER sample data insertion.
 CREATE TABLE users (
-  user_id          UUID PRIMARY KEY,          -- will FK to auth.users(id) later
+  user_id          UUID PRIMARY KEY,
   role             user_role NOT NULL,
   email            TEXT NOT NULL,
+  password         TEXT NOT NULL DEFAULT 'password123',
   name             TEXT NOT NULL,
   phone            TEXT,
   city             TEXT,
@@ -208,83 +200,16 @@ CREATE INDEX idx_users_role         ON users(role);
 
 
 -- ===================== ROW-LEVEL SECURITY =====================
+-- RLS is DISABLED. The app uses the anon key with server-side session auth.
+-- All access control is handled in application code, not DB policies.
 
-ALTER TABLE users         ENABLE ROW LEVEL SECURITY;
-ALTER TABLE loads         ENABLE ROW LEVEL SECURITY;
-ALTER TABLE bids          ENABLE ROW LEVEL SECURITY;
-ALTER TABLE jobs          ENABLE ROW LEVEL SECURITY;
-ALTER TABLE messages      ENABLE ROW LEVEL SECURITY;
-ALTER TABLE notifications ENABLE ROW LEVEL SECURITY;
-ALTER TABLE reviews       ENABLE ROW LEVEL SECURITY;
-
--- ---------- USERS ----------
-CREATE POLICY "Users are viewable by authenticated users"
-  ON users FOR SELECT TO authenticated USING (true);
-CREATE POLICY "Users can update own profile"
-  ON users FOR UPDATE TO authenticated USING (auth.uid() = user_id);
-CREATE POLICY "Users can insert own record"
-  ON users FOR INSERT TO authenticated WITH CHECK (auth.uid() = user_id);
-
--- ---------- LOADS ----------
-CREATE POLICY "Loads are viewable by authenticated users"
-  ON loads FOR SELECT TO authenticated USING (true);
-CREATE POLICY "Clients can insert loads"
-  ON loads FOR INSERT TO authenticated WITH CHECK (auth.uid() = client_id);
-CREATE POLICY "Clients can update own loads"
-  ON loads FOR UPDATE TO authenticated USING (auth.uid() = client_id);
-CREATE POLICY "Clients can delete own loads"
-  ON loads FOR DELETE TO authenticated USING (auth.uid() = client_id);
-
--- ---------- BIDS ----------
-CREATE POLICY "Bids are viewable by authenticated users"
-  ON bids FOR SELECT TO authenticated USING (true);
-CREATE POLICY "Drivers can insert bids"
-  ON bids FOR INSERT TO authenticated WITH CHECK (auth.uid() = driver_id);
--- FIX: Allow both the driver (to edit amount/message) and the load owner
--- (to accept/reject) to update bids.
-CREATE POLICY "Bid owner or load client can update"
-  ON bids FOR UPDATE TO authenticated
-  USING (
-    auth.uid() = driver_id
-    OR auth.uid() IN (SELECT client_id FROM loads WHERE loads.load_id = bids.load_id)
-  );
-CREATE POLICY "Drivers can delete own bids"
-  ON bids FOR DELETE TO authenticated USING (auth.uid() = driver_id);
-
--- ---------- JOBS ----------
-CREATE POLICY "Job participants can view"
-  ON jobs FOR SELECT TO authenticated
-  USING (auth.uid() = driver_id OR auth.uid() = client_id);
-CREATE POLICY "Job participants can update"
-  ON jobs FOR UPDATE TO authenticated
-  USING (auth.uid() = driver_id OR auth.uid() = client_id);
-CREATE POLICY "Authenticated users can insert jobs"
-  ON jobs FOR INSERT TO authenticated WITH CHECK (true);
-
--- ---------- MESSAGES ----------
-CREATE POLICY "Message participants can view"
-  ON messages FOR SELECT TO authenticated
-  USING (auth.uid() = sender_id OR auth.uid() = recipient_id);
-CREATE POLICY "Authenticated users can send messages"
-  ON messages FOR INSERT TO authenticated WITH CHECK (auth.uid() = sender_id);
-CREATE POLICY "Recipients can mark messages read"
-  ON messages FOR UPDATE TO authenticated USING (auth.uid() = recipient_id);
-
--- ---------- NOTIFICATIONS ----------
-CREATE POLICY "Users see own notifications"
-  ON notifications FOR SELECT TO authenticated USING (auth.uid() = user_id);
-CREATE POLICY "System can insert notifications"
-  ON notifications FOR INSERT TO authenticated WITH CHECK (true);
-CREATE POLICY "Users can update own notifications"
-  ON notifications FOR UPDATE TO authenticated USING (auth.uid() = user_id);
-CREATE POLICY "Users can delete own notifications"
-  ON notifications FOR DELETE TO authenticated USING (auth.uid() = user_id);
-
--- ---------- REVIEWS ----------
-CREATE POLICY "Reviews are viewable by authenticated users"
-  ON reviews FOR SELECT TO authenticated USING (true);
-CREATE POLICY "Authenticated users can insert reviews"
-  ON reviews FOR INSERT TO authenticated WITH CHECK (auth.uid() = reviewer_id);
+ALTER TABLE users         DISABLE ROW LEVEL SECURITY;
+ALTER TABLE loads         DISABLE ROW LEVEL SECURITY;
+ALTER TABLE bids          DISABLE ROW LEVEL SECURITY;
+ALTER TABLE jobs          DISABLE ROW LEVEL SECURITY;
+ALTER TABLE messages      DISABLE ROW LEVEL SECURITY;
+ALTER TABLE notifications DISABLE ROW LEVEL SECURITY;
+ALTER TABLE reviews       DISABLE ROW LEVEL SECURITY;
 
 
 -- ============================================================
@@ -333,90 +258,90 @@ CREATE TRIGGER trg_bids_count
 
 -- ===================== 10 DRIVERS =====================
 
-INSERT INTO users (user_id, role, email, name, phone, city, address, account_status, company_name, payment_verified, payment_method_type, total_spent_usd, title, specialization, bio, skill_tags, total_earnings_usd, average_rating, total_kilometres, driver_ranking, availability, acceptance_rate_pct, profile_views, profile_clicks)
+INSERT INTO users (user_id, role, email, password, name, phone, city, address, account_status, company_name, payment_verified, payment_method_type, total_spent_usd, title, specialization, bio, skill_tags, total_earnings_usd, average_rating, total_kilometres, driver_ranking, availability, acceptance_rate_pct, profile_views, profile_clicks)
 VALUES
-('d0000001-0000-0000-0000-000000000001', 'DRIVER', 'tendai.m@takurabid.co.zw', 'Tendai Mukamuri', '+263 77 123 4501', 'Harare', '12 Samora Machel Ave, Harare', 'Active', NULL, NULL, NULL, NULL,
+('d0000001-0000-0000-0000-000000000001', 'DRIVER', 'tendai.m@takurabid.co.zw', 'password123', 'Tendai Mukamuri', '+263 77 123 4501', 'Harare', '12 Samora Machel Ave, Harare', 'Active', NULL, NULL, NULL, NULL,
  'Expert Heavy Equipment Transport', 'Professional Long-Distance Driver', 'Seasoned driver with 12 years of experience transporting heavy machinery across Zimbabwe and the SADC region. Specialising in flatbed and low-loader operations with a perfect safety record.',
  'Heavy Equipment,Long Distance,Flatbed Transport', 33200.00, 4.80, 78500, 'Top 5%', 'Available', 82.50, 2847, 892),
 
-('d0000002-0000-0000-0000-000000000002', 'DRIVER', 'sarah.c@takurabid.co.zw', 'Sarah Chikwanha', '+263 77 123 4502', 'Bulawayo', '8 Fort St, Bulawayo', 'Active', NULL, NULL, NULL, NULL,
+('d0000002-0000-0000-0000-000000000002', 'DRIVER', 'sarah.c@takurabid.co.zw', 'password123', 'Sarah Chikwanha', '+263 77 123 4502', 'Bulawayo', '8 Fort St, Bulawayo', 'Active', NULL, NULL, NULL, NULL,
  'Agricultural & Cold Chain Specialist', 'Refrigerated Transport Expert', 'Expert in temperature-controlled logistics for fresh produce, dairy, and pharmaceuticals. Operating a modern refrigerated fleet with real-time temperature monitoring.',
  'Agricultural Products,Cold Chain,Refrigerated Transport', 45100.00, 4.90, 62300, 'Top 3%', 'Available', 91.20, 3102, 1045),
 
-('d0000003-0000-0000-0000-000000000003', 'DRIVER', 'james.m@takurabid.co.zw', 'James Moyo', '+263 77 123 4503', 'Gweru', '45 Main St, Gweru', 'Active', NULL, NULL, NULL, NULL,
+('d0000003-0000-0000-0000-000000000003', 'DRIVER', 'james.m@takurabid.co.zw', 'password123', 'James Moyo', '+263 77 123 4503', 'Gweru', '45 Main St, Gweru', 'Active', NULL, NULL, NULL, NULL,
  'Construction & Mining Transport', 'Heavy-Duty Hauling Specialist', 'Dedicated to the construction and mining sectors with specialised equipment for oversized loads. Fully insured and compliant with all mining transport regulations.',
  'Construction Materials,Mining Transport,Oversized Loads', 28400.00, 4.70, 55200, 'Top 10%', 'Unavailable', 75.00, 1856, 623),
 
-('d0000004-0000-0000-0000-000000000004', 'DRIVER', 'grace.m@takurabid.co.zw', 'Grace Mapfumo', '+263 77 123 4504', 'Harare', '22 Enterprise Rd, Harare', 'Active', NULL, NULL, NULL, NULL,
+('d0000004-0000-0000-0000-000000000004', 'DRIVER', 'grace.m@takurabid.co.zw', 'password123', 'Grace Mapfumo', '+263 77 123 4504', 'Harare', '22 Enterprise Rd, Harare', 'Active', NULL, NULL, NULL, NULL,
  'General Freight & Cross-Border', 'Import/Export Logistics Driver', 'Experienced in cross-border freight between Zimbabwe, South Africa, Mozambique, and Zambia. Familiar with all border post procedures and customs documentation.',
  'General Freight,Cross-Border,Import/Export', 21700.00, 4.60, 92100, 'Top 15%', 'Available', 70.30, 1542, 487),
 
-('d0000005-0000-0000-0000-000000000005', 'DRIVER', 'michael.t@takurabid.co.zw', 'Michael Tafara', '+263 77 123 4505', 'Mutare', '10 Herbert Chitepo St, Mutare', 'Active', NULL, NULL, NULL, NULL,
+('d0000005-0000-0000-0000-000000000005', 'DRIVER', 'michael.t@takurabid.co.zw', 'password123', 'Michael Tafara', '+263 77 123 4505', 'Mutare', '10 Herbert Chitepo St, Mutare', 'Active', NULL, NULL, NULL, NULL,
  'Liquid & Chemical Transport', 'Certified Hazmat Driver', 'Specialising in the safe transport of fuel, chemicals, and industrial liquids. ADR certified with specialised tanker vehicles and full hazmat compliance.',
  'Liquid Transport,Fuel Delivery,Chemical Transport', 52300.00, 4.90, 48700, 'Top 2%', 'Available', 88.60, 3890, 1320),
 
-('d0000006-0000-0000-0000-000000000006', 'DRIVER', 'patricia.n@takurabid.co.zw', 'Patricia Nyoni', '+263 77 123 4506', 'Victoria Falls', '5 Livingstone Way, Victoria Falls', 'Active', NULL, NULL, NULL, NULL,
+('d0000006-0000-0000-0000-000000000006', 'DRIVER', 'patricia.n@takurabid.co.zw', 'password123', 'Patricia Nyoni', '+263 77 123 4506', 'Victoria Falls', '5 Livingstone Way, Victoria Falls', 'Active', NULL, NULL, NULL, NULL,
  'Express & Time-Sensitive Delivery', 'Urgent Cargo Specialist', 'Focused on express and same-day deliveries across Zimbabwe. Medical supply logistics certified with a track record of 99% on-time delivery for urgent shipments.',
  'Express Delivery,Time-Sensitive,Medical Supplies', 38600.00, 4.80, 41200, 'Top 5%', 'Available', 94.10, 2310, 876),
 
-('d0000007-0000-0000-0000-000000000007', 'DRIVER', 'tatenda.g@takurabid.co.zw', 'Tatenda Gumbo', '+263 77 123 4507', 'Masvingo', '18 Robertson St, Masvingo', 'Active', NULL, NULL, NULL, NULL,
+('d0000007-0000-0000-0000-000000000007', 'DRIVER', 'tatenda.g@takurabid.co.zw', 'password123', 'Tatenda Gumbo', '+263 77 123 4507', 'Masvingo', '18 Robertson St, Masvingo', 'Active', NULL, NULL, NULL, NULL,
  'Furniture & Fragile Goods Transport', 'Careful Handling Specialist', 'Expert in moving furniture, electronics, and fragile goods with custom padding and secure loading techniques. Fully insured for high-value items.',
  'Furniture,Electronics,Fragile Goods', 19800.00, 4.50, 35600, 'Top 20%', 'Available', 68.40, 1120, 345),
 
-('d0000008-0000-0000-0000-000000000008', 'DRIVER', 'rumbidzai.c@takurabid.co.zw', 'Rumbidzai Chirwa', '+263 77 123 4508', 'Chinhoyi', '3 Magamba Way, Chinhoyi', 'Active', NULL, NULL, NULL, NULL,
+('d0000008-0000-0000-0000-000000000008', 'DRIVER', 'rumbidzai.c@takurabid.co.zw', 'password123', 'Rumbidzai Chirwa', '+263 77 123 4508', 'Chinhoyi', '3 Magamba Way, Chinhoyi', 'Active', NULL, NULL, NULL, NULL,
  'Agricultural Bulk Transport', 'Farm-to-Market Logistics', 'Specialising in bulk grain, tobacco, and cotton transport from farming regions to processing plants and markets. Deep knowledge of seasonal logistics patterns.',
  'Agricultural Products,Bulk Transport,Farm Logistics', 27500.00, 4.70, 58900, 'Top 12%', 'Available', 79.80, 1670, 512),
 
-('d0000009-0000-0000-0000-000000000009', 'DRIVER', 'blessing.d@takurabid.co.zw', 'Blessing Dube', '+263 77 123 4509', 'Bulawayo', '27 Queens Rd, Bulawayo', 'Active', NULL, NULL, NULL, NULL,
+('d0000009-0000-0000-0000-000000000009', 'DRIVER', 'blessing.d@takurabid.co.zw', 'password123', 'Blessing Dube', '+263 77 123 4509', 'Bulawayo', '27 Queens Rd, Bulawayo', 'Active', NULL, NULL, NULL, NULL,
  'Vehicle & Machinery Transport', 'Car Carrier & Equipment Mover', 'Operating a multi-vehicle car carrier and flatbed fleet for vehicle dealerships and machinery companies. Licensed for oversized loads with pilot vehicle support.',
  'Vehicles,Machinery,Oversized Loads', 31200.00, 4.60, 43800, 'Top 8%', 'Unavailable', 72.50, 2050, 678),
 
-('d0000010-0000-0000-0000-000000000010', 'DRIVER', 'farai.z@takurabid.co.zw', 'Farai Zinyama', '+263 77 123 4510', 'Kariba', '14 Lakeside Dr, Kariba', 'Active', NULL, NULL, NULL, NULL,
+('d0000010-0000-0000-0000-000000000010', 'DRIVER', 'farai.z@takurabid.co.zw', 'password123', 'Farai Zinyama', '+263 77 123 4510', 'Kariba', '14 Lakeside Dr, Kariba', 'Active', NULL, NULL, NULL, NULL,
  'Tourism & Hospitality Logistics', 'Safari Equipment Specialist', 'Providing logistics support to the tourism and hospitality sector including safari equipment, hotel supplies, and event logistics across resort destinations.',
  'Tourism Equipment,Hospitality,Event Logistics', 16400.00, 4.40, 29300, 'Top 25%', 'Available', 65.00, 980, 289);
 
 
 -- ===================== 10 CLIENTS =====================
 
-INSERT INTO users (user_id, role, email, name, phone, city, address, account_status, company_name, payment_verified, payment_method_type, total_spent_usd, title, specialization, bio, skill_tags, total_earnings_usd, average_rating, total_kilometres, driver_ranking, availability, acceptance_rate_pct, profile_views, profile_clicks)
+INSERT INTO users (user_id, role, email, password, name, phone, city, address, account_status, company_name, payment_verified, payment_method_type, total_spent_usd, title, specialization, bio, skill_tags, total_earnings_usd, average_rating, total_kilometres, driver_ranking, availability, acceptance_rate_pct, profile_views, profile_clicks)
 VALUES
-('c0000001-0000-0000-0000-000000000001', 'CLIENT', 'info@abcconstruction.co.zw', 'Takudzwa Nhira', '+263 77 234 5601', 'Harare', '100 Borrowdale Rd, Harare', 'Active',
+('c0000001-0000-0000-0000-000000000001', 'CLIENT', 'info@abcconstruction.co.zw', 'password123', 'Takudzwa Nhira', '+263 77 234 5601', 'Harare', '100 Borrowdale Rd, Harare', 'Active',
  'ABC Construction', true, 'Bank Transfer', 15420.00,
  NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL),
 
-('c0000002-0000-0000-0000-000000000002', 'CLIENT', 'logistics@farmfresh.co.zw', 'Nyasha Mhandu', '+263 77 234 5602', 'Chinhoyi', '55 Independence Ave, Chinhoyi', 'Active',
+('c0000002-0000-0000-0000-000000000002', 'CLIENT', 'logistics@farmfresh.co.zw', 'password123', 'Nyasha Mhandu', '+263 77 234 5602', 'Chinhoyi', '55 Independence Ave, Chinhoyi', 'Active',
  'Farm Fresh Zimbabwe', true, 'EcoCash', 22350.00,
  NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL),
 
-('c0000003-0000-0000-0000-000000000003', 'CLIENT', 'ops@safarilodge.co.zw', 'Chipo Garwe', '+263 77 234 5603', 'Victoria Falls', '7 Park Way, Victoria Falls', 'Active',
+('c0000003-0000-0000-0000-000000000003', 'CLIENT', 'ops@safarilodge.co.zw', 'password123', 'Chipo Garwe', '+263 77 234 5603', 'Victoria Falls', '7 Park Way, Victoria Falls', 'Active',
  'Safari Lodge Group', true, 'Credit Card', 9870.00,
  NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL),
 
-('c0000004-0000-0000-0000-000000000004', 'CLIENT', 'supply@retailplus.co.zw', 'Kudakwashe Banda', '+263 77 234 5604', 'Bulawayo', '33 Fife St, Bulawayo', 'Active',
+('c0000004-0000-0000-0000-000000000004', 'CLIENT', 'supply@retailplus.co.zw', 'password123', 'Kudakwashe Banda', '+263 77 234 5604', 'Bulawayo', '33 Fife St, Bulawayo', 'Active',
  'Retail Plus Zimbabwe', true, 'Mobile Money', 31200.00,
  NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL),
 
-('c0000005-0000-0000-0000-000000000005', 'CLIENT', 'transport@zimmine.co.zw', 'Simba Dzapasi', '+263 77 234 5605', 'Gweru', '12 Seventh St, Gweru', 'Active',
+('c0000005-0000-0000-0000-000000000005', 'CLIENT', 'transport@zimmine.co.zw', 'password123', 'Simba Dzapasi', '+263 77 234 5605', 'Gweru', '12 Seventh St, Gweru', 'Active',
  'Zimbabwe Mining Corp', true, 'Bank Transfer', 48500.00,
  NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL),
 
-('c0000006-0000-0000-0000-000000000006', 'CLIENT', 'logistics@medisupply.co.zw', 'Rudo Matema', '+263 77 234 5606', 'Harare', '88 Kwame Nkrumah Ave, Harare', 'Active',
+('c0000006-0000-0000-0000-000000000006', 'CLIENT', 'logistics@medisupply.co.zw', 'password123', 'Rudo Matema', '+263 77 234 5606', 'Harare', '88 Kwame Nkrumah Ave, Harare', 'Active',
  'MediSupply Zim', true, 'Credit Card', 7650.00,
  NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL),
 
-('c0000007-0000-0000-0000-000000000007', 'CLIENT', 'dispatch@graincorp.co.zw', 'Tinotenda Chigumba', '+263 77 234 5607', 'Masvingo', '4 Hughes St, Masvingo', 'Active',
+('c0000007-0000-0000-0000-000000000007', 'CLIENT', 'dispatch@graincorp.co.zw', 'password123', 'Tinotenda Chigumba', '+263 77 234 5607', 'Masvingo', '4 Hughes St, Masvingo', 'Active',
  'Grain Corp Holdings', false, 'Bank Transfer', 5200.00,
  NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL),
 
-('c0000008-0000-0000-0000-000000000008', 'CLIENT', 'orders@zimtourism.co.zw', 'Tariro Mushonga', '+263 77 234 5608', 'Kariba', '9 Lake View Rd, Kariba', 'Active',
+('c0000008-0000-0000-0000-000000000008', 'CLIENT', 'orders@zimtourism.co.zw', 'password123', 'Tariro Mushonga', '+263 77 234 5608', 'Kariba', '9 Lake View Rd, Kariba', 'Active',
  'Zimtourism Supplies', true, 'EcoCash', 11300.00,
  NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL),
 
-('c0000009-0000-0000-0000-000000000009', 'CLIENT', 'fleet@steelworks.co.zw', 'Tawanda Mvura', '+263 77 234 5609', 'Kwekwe', '21 Kadoma Rd, Kwekwe', 'Active',
+('c0000009-0000-0000-0000-000000000009', 'CLIENT', 'fleet@steelworks.co.zw', 'password123', 'Tawanda Mvura', '+263 77 234 5609', 'Kwekwe', '21 Kadoma Rd, Kwekwe', 'Active',
  'SteelWorks Pvt Ltd', true, 'Bank Transfer', 36800.00,
  NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL),
 
-('c0000010-0000-0000-0000-000000000010', 'CLIENT', 'shipping@greenleaf.co.zw', 'Maidei Sithole', '+263 77 234 5610', 'Mutare', '15 Main St, Mutare', 'Active',
+('c0000010-0000-0000-0000-000000000010', 'CLIENT', 'shipping@greenleaf.co.zw', 'password123', 'Maidei Sithole', '+263 77 234 5610', 'Mutare', '15 Main St, Mutare', 'Active',
  'GreenLeaf Exports', true, 'PayPal', 18900.00,
  NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
 
@@ -626,12 +551,83 @@ INSERT INTO notifications (user_id, title, body, type, "read", reference_id, cre
 ('c0000008-0000-0000-0000-000000000008', 'Multiple Bids', 'LOAD013 (Lodge Furniture Delivery) has received 4 bids. Review them now!', 'bid', false, 'LOAD013', now() - interval '8 hours');
 
 
--- ============================================================
--- RE-ADD AUTH FK (uncomment for production with real Supabase Auth users)
--- ============================================================
--- ALTER TABLE users
---   ADD CONSTRAINT users_user_id_fkey
---   FOREIGN KEY (user_id) REFERENCES auth.users(id) ON DELETE CASCADE;
+-- ===================== EXTRA COMPLETED LOADS (for reviews) =====================
+
+INSERT INTO loads (load_id, client_id, title, cargo_type, weight_tons, origin_city, destination_city, distance_km, budget_usd, pickup_date, delivery_date, trip_type, urgency, description, requirements, status, assigned_driver_id, bids_count, posted_at)
+VALUES
+('LOAD021', 'c0000007-0000-0000-0000-000000000007', 'Cross-Border Maize Delivery', 'Agricultural Products', 18.0, 'Masvingo', 'Beit Bridge', 298, 1400.00, '2026-01-10', '2026-01-12', 'One Way', 'Standard',
+ 'Bulk maize delivery from Masvingo to Beit Bridge for export. Covered transport required.', ARRAY['Bulk Carrier','Customs Docs'], 'Completed', 'd0000003-0000-0000-0000-000000000003', 2, now() - interval '45 days'),
+
+('LOAD022', 'c0000008-0000-0000-0000-000000000008', 'Cross-Border Goods Transport', 'General Freight', 6.0, 'Harare', 'Beitbridge', 580, 1100.00, '2026-01-15', '2026-01-17', 'One Way', 'Standard',
+ 'Mixed general freight for cross-border delivery. Customs paperwork included.', ARRAY['Covered Transport','GPS Tracking'], 'Completed', 'd0000004-0000-0000-0000-000000000004', 3, now() - interval '40 days'),
+
+('LOAD023', 'c0000006-0000-0000-0000-000000000006', 'Industrial Chemical Delivery', 'Chemicals', 5.0, 'Harare', 'Kwekwe', 213, 1300.00, '2026-01-20', '2026-01-21', 'One Way', 'Urgent',
+ 'Certified hazmat chemical transport for industrial facility. ADR compliance required.', ARRAY['Hazmat Certified','Temperature Control'], 'Completed', 'd0000005-0000-0000-0000-000000000005', 4, now() - interval '35 days'),
+
+('LOAD024', 'c0000010-0000-0000-0000-000000000010', 'Exhibition Equipment Delivery', 'Tourism Equipment', 3.5, 'Bulawayo', 'Victoria Falls', 440, 950.00, '2026-01-25', '2026-01-27', 'One Way', 'Standard',
+ 'Exhibition equipment and display stands for Victoria Falls Tourism Expo.', ARRAY['Covered Transport','Careful Handling'], 'Completed', 'd0000007-0000-0000-0000-000000000007', 2, now() - interval '30 days'),
+
+('LOAD025', 'c0000001-0000-0000-0000-000000000001', 'Crane & Heavy Equipment Move', 'Mining Equipment', 22.0, 'Harare', 'Gweru', 275, 3200.00, '2026-02-01', '2026-02-03', 'One Way', 'Standard',
+ 'Large crane and earthmoving equipment relocation for construction project.', ARRAY['Low-Loader','Pilot Vehicle','Oversized Load Permit'], 'Completed', 'd0000009-0000-0000-0000-000000000009', 3, now() - interval '24 days'),
+
+('LOAD026', 'c0000003-0000-0000-0000-000000000003', 'Safari Vehicle Transport', 'Vehicles', 8.0, 'Harare', 'Kariba', 365, 1800.00, '2026-02-05', '2026-02-07', 'One Way', 'Standard',
+ 'Transport of three safari game-viewer vehicles from Harare dealership to new Kariba lodge.', ARRAY['Car Carrier','GPS Tracking','Insurance Required'], 'Completed', 'd0000010-0000-0000-0000-000000000010', 2, now() - interval '20 days');
+
+
+-- ===================== EXTRA COMPLETED JOBS (for reviews) =====================
+
+INSERT INTO jobs (job_id, load_id, driver_id, client_id, rate_usd, status, progress_pct, started_at, completed_at)
+VALUES
+('JOB011', 'LOAD021', 'd0000003-0000-0000-0000-000000000003', 'c0000007-0000-0000-0000-000000000007', 1350.00, 'Completed', 100, now() - interval '45 days', now() - interval '43 days'),
+('JOB012', 'LOAD022', 'd0000004-0000-0000-0000-000000000004', 'c0000008-0000-0000-0000-000000000008', 1050.00, 'Completed', 100, now() - interval '40 days', now() - interval '38 days'),
+('JOB013', 'LOAD023', 'd0000005-0000-0000-0000-000000000005', 'c0000006-0000-0000-0000-000000000006', 1250.00, 'Completed', 100, now() - interval '35 days', now() - interval '34 days'),
+('JOB014', 'LOAD024', 'd0000007-0000-0000-0000-000000000007', 'c0000010-0000-0000-0000-000000000010', 900.00, 'Completed', 100, now() - interval '30 days', now() - interval '28 days'),
+('JOB015', 'LOAD025', 'd0000009-0000-0000-0000-000000000009', 'c0000001-0000-0000-0000-000000000001', 3100.00, 'Completed', 100, now() - interval '24 days', now() - interval '22 days'),
+('JOB016', 'LOAD026', 'd0000010-0000-0000-0000-000000000010', 'c0000003-0000-0000-0000-000000000003', 1750.00, 'Completed', 100, now() - interval '20 days', now() - interval '18 days');
+
+
+-- ===================== FULL REVIEWS FOR ALL 10 DRIVERS =====================
+
+INSERT INTO reviews (job_id, reviewer_id, reviewee_id, rating, comment, created_at) VALUES
+-- Driver 1 (Tendai): JOB006 - existing
+('JOB006', 'c0000009-0000-0000-0000-000000000009', 'd0000001-0000-0000-0000-000000000001', 4.5, 'Heavy load handled with expertise. Tendai knows his way around flatbed operations. Professional from pickup to delivery.', now() - interval '13 days'),
+('JOB006', 'd0000001-0000-0000-0000-000000000001', 'c0000009-0000-0000-0000-000000000009', 5.0, 'SteelWorks has an efficient loading operation. Will work with them again.', now() - interval '13 days'),
+
+-- Driver 2 (Sarah): JOB004 - existing
+('JOB004', 'c0000002-0000-0000-0000-000000000002', 'd0000002-0000-0000-0000-000000000002', 5.0, 'Excellent cold chain service. Produce arrived fresh and on time. Sarah is a true professional for perishable goods.', now() - interval '7 days'),
+('JOB004', 'd0000002-0000-0000-0000-000000000002', 'c0000002-0000-0000-0000-000000000002', 5.0, 'Great client — everything was ready on time and well-packed. Smooth transaction.', now() - interval '7 days'),
+
+-- Driver 3 (James): JOB011 - new
+('JOB011', 'c0000007-0000-0000-0000-000000000007', 'd0000003-0000-0000-0000-000000000003', 4.5, 'James handled the cross-border paperwork seamlessly. The drilling equipment arrived in Beit Bridge without a scratch. Will use again for mining hauls.', now() - interval '43 days'),
+('JOB011', 'd0000003-0000-0000-0000-000000000003', 'c0000007-0000-0000-0000-000000000007', 5.0, 'Well-organised client. Clear cargo description and documentation ready. Made my job easy.', now() - interval '43 days'),
+
+-- Driver 4 (Grace): JOB012 - new
+('JOB012', 'c0000008-0000-0000-0000-000000000008', 'd0000004-0000-0000-0000-000000000004', 4.5, 'Grace knows the cross-border routes exceptionally well. Cargo cleared customs without delays and arrived in perfect condition. Highly recommended.', now() - interval '38 days'),
+('JOB012', 'd0000004-0000-0000-0000-000000000004', 'c0000008-0000-0000-0000-000000000008', 4.5, 'Good client with clear requirements. Freight was well-packaged for the long journey. Would work with again.', now() - interval '38 days'),
+
+-- Driver 5 (Michael): JOB013 - new
+('JOB013', 'c0000006-0000-0000-0000-000000000006', 'd0000005-0000-0000-0000-000000000005', 5.0, 'Michael is the best hazmat driver on the platform. His ADR certification is current and he maintains flawless documentation. The chemicals arrived temperature-controlled and on schedule. Exceptional professionalism.', now() - interval '34 days'),
+('JOB013', 'd0000005-0000-0000-0000-000000000005', 'c0000006-0000-0000-0000-000000000006', 5.0, 'MediSupply Zim is a top-tier client. Clear chemical specifications, proper packaging, and quick payment after delivery.', now() - interval '34 days'),
+
+-- Driver 6 (Patricia): JOB005 - existing
+('JOB005', 'c0000003-0000-0000-0000-000000000003', 'd0000006-0000-0000-0000-000000000006', 5.0, 'Professional handling of fragile equipment. Everything arrived in perfect condition over a long route. Patricia is our go-to driver for urgent and delicate loads.', now() - interval '8 days'),
+('JOB005', 'd0000006-0000-0000-0000-000000000006', 'c0000003-0000-0000-0000-000000000003', 4.5, 'Well-organised client. Clear instructions and prompt payment.', now() - interval '8 days'),
+
+-- Driver 7 (Tatenda): JOB014 - new
+('JOB014', 'c0000010-0000-0000-0000-000000000010', 'd0000007-0000-0000-0000-000000000007', 4.5, 'Tatenda wrapped each exhibition stand individually and delivered everything safely. Some items were very fragile and he handled them with care. No damage whatsoever.', now() - interval '28 days'),
+('JOB014', 'd0000007-0000-0000-0000-000000000007', 'c0000010-0000-0000-0000-000000000010', 4.5, 'Excellent client with well-labelled cargo. The exhibition items were fragile but clearly marked. Smooth handover at Victoria Falls.', now() - interval '28 days'),
+
+-- Driver 8 (Rumbidzai): JOB007 - existing
+('JOB007', 'c0000010-0000-0000-0000-000000000010', 'd0000008-0000-0000-0000-000000000008', 4.0, 'Good delivery, arrived on time. Tobacco bales were well-protected from moisture. Rumbidzai communicates regularly during transit which is appreciated.', now() - interval '15 days'),
+('JOB007', 'd0000008-0000-0000-0000-000000000008', 'c0000010-0000-0000-0000-000000000010', 4.5, 'Professional farm operation. Loading was quick and efficient. Bales were perfectly wrapped.', now() - interval '15 days'),
+
+-- Driver 9 (Blessing): JOB015 - new
+('JOB015', 'c0000001-0000-0000-0000-000000000001', 'd0000009-0000-0000-0000-000000000009', 4.5, 'Blessing moved our 22-ton crane with zero incidents. He had all the permits ready and coordinated the pilot vehicle flawlessly. The site team was very impressed. Would use again for heavy lifts.', now() - interval '22 days'),
+('JOB015', 'd0000009-0000-0000-0000-000000000009', 'c0000001-0000-0000-0000-000000000001', 5.0, 'ABC Construction is a well-run company. The crane was secured and the site access was well-prepared. Professional interaction from start to finish.', now() - interval '22 days'),
+
+-- Driver 10 (Farai): JOB016 - new
+('JOB016', 'c0000003-0000-0000-0000-000000000003', 'd0000010-0000-0000-0000-000000000010', 4.5, 'Farai transported three game-viewer vehicles to our Kariba lodge without a single scratch. He understands the tourism sector and handled the vehicles like they were his own. Very professional attitude.', now() - interval '18 days'),
+('JOB016', 'd0000010-0000-0000-0000-000000000010', 'c0000003-0000-0000-0000-000000000003', 5.0, 'Safari Lodge Group is a great client. Vehicles were ready for pickup on time and the Kariba delivery location was easy to navigate. Would recommend.', now() - interval '18 days');
 
 
 -- ============================================================
@@ -640,21 +636,14 @@ INSERT INTO notifications (user_id, title, body, type, "read", reference_id, cre
 --
 -- Summary:
 --   • 7 tables: users, loads, bids, jobs, messages, notifications, reviews
---   • 20 users (10 drivers + 10 clients)
---   • 20 loads (3 in-transit, 4 completed, 3 assigned, 10 in-bidding)
---   • 28 bids across multiple loads
---   • 10 jobs (3 in-transit, 4 completed, 2 pending, 1 active)
---   • 21 messages across 5 conversation threads
---   • 8 reviews (mutual reviews on 4 completed jobs)
---   • 13 notifications for various events
---   • Row-Level Security policies on all tables (with DELETE policies)
+--   • 20 users (10 drivers + 10 clients), all with password 'password123'
+--   • 26 loads (completed, in-transit, assigned, in-bidding)
+--   • 28+ bids across multiple loads
+--   • 16 jobs (completed, in-transit, pending, active)
+--   • Messages across multiple job threads
+--   • 20 reviews — 2 per driver (all 10 drivers covered)
+--   • Notifications for various events
+--   • RLS DISABLED — app uses anon key with server-side session auth
 --   • Auto-triggers for updated_at and bids_count
 --   • Full indexes for performance
---
--- Fixes applied:
---   1. user_id is explicitly UUID (no premature auth.users FK)
---   2. Removed password_hash and salt columns
---   3. Fixed bids UPDATE policy (clients can now accept/reject)
---   4. Added DELETE policies for loads, bids, notifications
---   5. Auth FK re-add is at the bottom (commented out for dev)
 -- ============================================================

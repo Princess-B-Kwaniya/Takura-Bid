@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import { useRouter } from 'next/navigation'
 import { fetchDrivers } from '@/lib/queries/users.client'
 import type { Driver as DbDriver } from '@/lib/types/database'
 
@@ -45,7 +46,10 @@ interface DriverCardProps {
 
 function DriverCard({ driver, onSelect }: DriverCardProps) {
   return (
-    <div className="bg-white rounded-lg border border-gray-200 hover:shadow-md transition-all duration-200 p-4 md:p-6">
+    <div
+      className="bg-white rounded-lg border border-gray-200 hover:shadow-md transition-all duration-200 p-4 md:p-6 cursor-pointer"
+      onClick={() => onSelect(driver)}
+    >
       <div className="flex flex-col lg:flex-row lg:items-start space-y-4 lg:space-y-0 lg:space-x-4">
         {/* Profile Image and Basic Info */}
         <div className="flex-shrink-0 flex flex-col sm:flex-row items-center sm:items-start space-y-3 sm:space-y-0 sm:space-x-4">
@@ -111,8 +115,8 @@ function DriverCard({ driver, onSelect }: DriverCardProps) {
             </div>
 
             {/* Right Side: Action Buttons - Full width on mobile */}
-            <div className="flex-shrink-0 w-full lg:w-auto">
-              <button 
+            <div className="flex-shrink-0 w-full lg:w-auto" onClick={e => e.stopPropagation()}>
+              <button
                 onClick={() => onSelect(driver)}
                 disabled={!driver.available}
                 className={`w-full px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
@@ -122,7 +126,7 @@ function DriverCard({ driver, onSelect }: DriverCardProps) {
                 }`}
                 style={driver.available ? { backgroundColor: '#3f2a52' } : {}}
               >
-                {driver.available ? 'Hire Driver' : 'Unavailable'}
+                {driver.available ? 'View Profile' : 'Unavailable'}
               </button>
             </div>
           </div>
@@ -136,6 +140,7 @@ export function DriversList() {
   const [drivers, setDrivers] = useState<Driver[]>([])
   const [search, setSearch] = useState('')
   const [loading, setLoading] = useState(true)
+  const router = useRouter()
 
   useEffect(() => {
     const timeout = setTimeout(() => {
@@ -149,7 +154,7 @@ export function DriversList() {
   }, [search])
 
   const handleSelectDriver = (driver: Driver) => {
-    console.log('Selected driver:', driver)
+    router.push(`/client/drivers/${driver.id}`)
   }
 
   return (

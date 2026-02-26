@@ -1,0 +1,72 @@
+{
+  "version": "v2_current",
+  "timestamp": "20260225_232403",
+  "config": {
+    "name": "Gradient Boosting (Current)",
+    "model_type": "GradientBoostingRegressor",
+    "version": "v2.0",
+    "features": [
+      "distance",
+      "hour",
+      "day_of_week",
+      "temperature",
+      "precipitation",
+      "hour_sin",
+      "hour_cos",
+      "day_sin",
+      "day_cos",
+      "distance_log",
+      "distance_sqrt",
+      "distance_squared",
+      "temp_squared",
+      "is_peak_hour",
+      "is_weekend",
+      "hour_to_peak"
+    ],
+    "model_params": {
+      "n_estimators": 200,
+      "learning_rate": 0.08,
+      "max_depth": 7,
+      "min_samples_split": 5,
+      "min_samples_leaf": 2,
+      "subsample": 0.8,
+      "random_state": 42,
+      "verbose": 0
+    },
+    "description": "Advanced model with engineered features and Gradient Boosting"
+  },
+  "history": {
+    "train": {
+      "mae": 6.422005742879647,
+      "rmse": 7.864556274255922,
+      "r2": 0.2859543545796849
+    },
+    "test": {
+      "mae": 7.092373909027034,
+      "rmse": 8.783942988698985,
+      "r2": 0.08502685276622046,
+      "accuracy_within_10": 74.56798174111509,
+      "accuracy_within_5": 39.039234865775455,
+      "accuracy_within_20pct": 25.942832300836866
+    }
+  },
+  "features": [
+    "distance",
+    "hour",
+    "day_of_week",
+    "temperature",
+    "precipitation",
+    "hour_sin",
+    "hour_cos",
+    "day_sin",
+    "day_cos",
+    "distance_log",
+    "distance_sqrt",
+    "distance_squared",
+    "temp_squared",
+    "is_peak_hour",
+    "is_weekend",
+    "hour_to_peak"
+  ],
+  "feature_count": 16
+}

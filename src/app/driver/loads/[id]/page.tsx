@@ -53,27 +53,61 @@ export default function DriverLoadDetailPage() {
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState('')
   const [success, setSuccess] = useState(false)
+  const [suggestedPrice, setSuggestedPrice] = useState<number | null>(null)
+  const [priceLoading, setPriceLoading] = useState(false)
 
   useEffect(() => {
-    if (authLoading) return
+    if (authLoading || !id) return
+    
     async function load_data() {
-      const [loadRes, bidRes] = await Promise.all([
-        fetch(`/api/loads/${id}`),
-        user ? fetch(`/api/bids/my?loadId=${id}`) : Promise.resolve(null),
-      ])
-      if (loadRes.ok) {
-        const d = await loadRes.json()
-        setLoad(d.load)
-        setAmount(String(d.load?.budget_usd ?? ''))
+      try {
+        // Fetch load and bid data in parallel
+        const [loadRes, bidRes] = await Promise.all([
+          fetch(`/api/loads/${id}`),
+          user ? fetch(`/api/bids/my?loadId=${id}`) : Promise.resolve(null),
+        ])
+        
+        if (loadRes.ok) {
+          const d = await loadRes.json()
+          setLoad(d.load)
+          setAmount(String(d.load?.budget_usd ?? ''))
+          
+          // Fetch AI price suggestion separately (non-blocking)
+          // Don't await this - let it load in background
+          if (d.load?.distance_km && d.load?.pickup_date) {
+            setPriceLoading(true)
+            fetch('/api/pricing/estimate', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                distance_km: d.load.distance_km,
+                pickup_datetime: d.load.pickup_date,
+              }),
+            })
+              .then(res => res.ok ? res.json() : null)
+              .then(data => {
+                if (data?.suggested_bid) {
+                  setSuggestedPrice(data.suggested_bid)
+                }
+              })
+              .catch(err => console.error('Price suggestion failed:', err))
+              .finally(() => setPriceLoading(false))
+          }
+        }
+        
+        if (bidRes?.ok) {
+          const d = await bidRes.json()
+          setExistingBid(d.bid ?? null)
+        }
+      } catch (err) {
+        console.error('Error loading data:', err)
+      } finally {
+        setLoading(false)
       }
-      if (bidRes?.ok) {
-        const d = await bidRes.json()
-        setExistingBid(d.bid ?? null)
-      }
-      setLoading(false)
     }
+    
     load_data()
-  }, [id, user, authLoading])
+  }, [id, authLoading]) // Remove 'user' from dependencies to prevent re-runs
 
   async function handleApply(e: React.FormEvent) {
     e.preventDefault()
@@ -239,6 +273,31 @@ export default function DriverLoadDetailPage() {
                 </div>
               ) : (
                 <form onSubmit={handleApply} className="space-y-4">
+                  {/* AI Price Suggestion */}
+                  {priceLoading && (
+                    <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg flex items-center space-x-2">
+                      <div className="w-4 h-4 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
+                      <span className="text-sm text-blue-700">Calculating AI-powered price suggestion...</span>
+                    </div>
+                  )}
+                  {suggestedPrice && !priceLoading && (
+                    <div className="p-3 bg-green-50 border border-green-200 rounded-lg">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <p className="text-xs text-green-700 font-medium">💡 AI PRICE SUGGESTION</p>
+                          <p className="text-lg font-bold text-green-900">${suggestedPrice.toLocaleString()}</p>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => setAmount(String(suggestedPrice))}
+                          className="px-3 py-1 bg-green-600 hover:bg-green-700 text-white text-sm font-medium rounded-lg transition-colors"
+                        >
+                          Use Suggestion
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                  
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">Your Rate (USD)</label>
                     <input

@@ -1,6 +1,7 @@
 import { NextResponse, type NextRequest } from 'next/server'
 
 const PUBLIC_ROUTES = ['/', '/auth/login', '/auth/signup']
+const PUBLIC_API_ROUTES = ['/api/pricing/estimate'] // Allow ML pricing without auth
 
 export function middleware(request: NextRequest) {
   const pathname = request.nextUrl.pathname
@@ -10,6 +11,9 @@ export function middleware(request: NextRequest) {
 
   // PUBLIC_ROUTES check
   if (PUBLIC_ROUTES.includes(pathname)) return NextResponse.next()
+
+  // PUBLIC API routes check - allow these without auth
+  if (PUBLIC_API_ROUTES.includes(pathname)) return NextResponse.next()
 
   if (!userId) {
     // If it's an API request, return 401 instead of redirecting

@@ -38,3 +38,8 @@ next-env.d.ts
 
 # OS
 Thumbs.db
+
+# Large data files
+data/cab-weather/cab_rides.txt
+data/cab-weather/weather.txt
+*.joblib

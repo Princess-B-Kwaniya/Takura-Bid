@@ -1,0 +1,10 @@
+{
+  "features": [
+    "distance",
+    "hour",
+    "dayofweek",
+    "temperature",
+    "precipitation"
+  ],
+  "target": "target"
+}

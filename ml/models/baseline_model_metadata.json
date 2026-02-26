@@ -1,0 +1,49 @@
+{
+  "version": "baseline",
+  "timestamp": "20260225_232243",
+  "config": {
+    "name": "Random Forest (Baseline)",
+    "model_type": "RandomForestRegressor",
+    "version": "v0.1",
+    "features": [
+      "distance",
+      "hour",
+      "day_of_week",
+      "temperature",
+      "precipitation"
+    ],
+    "model_params": {
+      "n_estimators": 100,
+      "max_depth": 15,
+      "min_samples_split": 5,
+      "min_samples_leaf": 2,
+      "random_state": 42,
+      "n_jobs": -1,
+      "verbose": 0
+    },
+    "description": "Simple baseline using ride characteristics only"
+  },
+  "history": {
+    "train": {
+      "mae": 5.926407543183319,
+      "rmse": 7.3144718469566605,
+      "r2": 0.3823485410121913
+    },
+    "test": {
+      "mae": 7.190207131292545,
+      "rmse": 8.910536769856563,
+      "r2": 0.05846370722244809,
+      "accuracy_within_10": 73.92674709270732,
+      "accuracy_within_5": 39.91957395935224,
+      "accuracy_within_20pct": 24.9538093685469
+    }
+  },
+  "features": [
+    "distance",
+    "hour",
+    "day_of_week",
+    "temperature",
+    "precipitation"
+  ],
+  "feature_count": 5
+}

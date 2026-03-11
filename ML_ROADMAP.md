@@ -1,7 +1,7 @@
 # TakuraBid ML Pricing Model - Development Roadmap
 
 ## Current Status
-**Production Ready v2** - GradientBoosting model with 13 engineered features, R² = 0.085
+**Production Ready v2.1** - GradientBoosting model with 16 engineered features, R² = 0.111
 
 Currently deployed with real-time price suggestions integrated into the driver dashboard.
 
@@ -9,9 +9,10 @@ Currently deployed with real-time price suggestions integrated into the driver d
 
 **Phase 1: ML Foundation**
 - Data pipeline with UTF-16 encoding detection
-- 13 engineered temporal, distance, and weather features
+- 16 engineered temporal, distance, and weather features
 - Baseline RandomForest model (R² = 0.0585)
 - Production v2 model using GradientBoosting (R² = 0.085)
+- **Production v2.1 model with Weather Alignment (R² = 0.111)**
 - Model serialization with joblib + JSON metadata
 - Comprehensive evaluation framework
 
@@ -33,12 +34,11 @@ Currently deployed with real-time price suggestions integrated into the driver d
 
 ## Next Steps: Phase 4 - Data Quality Improvements
 
-### 4.1 Weather Data Alignment (4-8 hours)
-The weather dataset has a 4-hour offset relative to ride timestamps, reducing feature correlation. 
+### 4.1 Weather Data Alignment (COMPLETED)
+The weather dataset had a 4-hour offset relative to ride timestamps, reducing feature correlation. 
 
 **Task:** Align observations within ±30 minute windows using timestamp parsing and interpolation.  
-**Expected Impact:** R² improvement to 0.15-0.20 (+7-10% accuracy)  
-**Priority:** HIGH - Quick win with high ROI
+**Impact:** R² improved from 0.085 to 0.111.
 
 ### 4.2 TakuraBid Platform Integration (16-24 hours)
 Current model uses generic cab ride data. Need platform-specific features.
@@ -195,8 +195,8 @@ CREATE INDEX ON predictions(load_id, timestamp);
 
 | Metric | Current | Target |
 |--------|---------|--------|
-| R² (model accuracy) | 0.085 | > 0.70 |
-| MAE (price error) | $7.09 | < $10 |
+| R² (model accuracy) | 0.111 | > 0.70 |
+| MAE (price error) | $7.05 | < $10 |
 | API latency p95 | <100ms | <100ms |
 | Driver acceptance rate | Unknown | > 70% |
 | Load completion rate | Unknown | > 85% |

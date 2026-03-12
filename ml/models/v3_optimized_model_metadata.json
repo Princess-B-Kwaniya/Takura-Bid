@@ -1,0 +1,61 @@
+{
+  "version": "v3_optimized",
+  "timestamp": "20260312_202636",
+  "config": {
+    "name": "Optimized LightGBM (Tuned)",
+    "model_type": "LGBMRegressor",
+    "version": "v3.1",
+    "features": [
+      "distance",
+      "hour",
+      "day_of_week",
+      "temperature",
+      "distance_log",
+      "distance_sqrt",
+      "market_baseline",
+      "market_diff_ratio",
+      "market_transit_baseline",
+      "dist_x_peak",
+      "dist_x_weekend"
+    ],
+    "model_params": {
+      "n_estimators": 667,
+      "max_depth": 4,
+      "learning_rate": 0.06258162764726913,
+      "num_leaves": 10,
+      "feature_fraction": 0.5929417926138087,
+      "bagging_fraction": 0.9059667636298728,
+      "bagging_freq": 2,
+      "min_child_samples": 74,
+      "verbose": -1
+    },
+    "description": "Hyperparameter tuned with Optuna, feature-pruned model"
+  },
+  "history": {
+    "train": {
+      "mae": 6.936093763519296,
+      "r2": 0.16440137634568575
+    },
+    "test": {
+      "mae": 6.990134737649791,
+      "r2": 0.13976283769808895,
+      "rmse": 8.596543184913745,
+      "accuracy_within_10": 75.81564518755768,
+      "accuracy_within_5": 37.744964985614246
+    }
+  },
+  "features": [
+    "distance",
+    "hour",
+    "day_of_week",
+    "temperature",
+    "distance_log",
+    "distance_sqrt",
+    "market_baseline",
+    "market_diff_ratio",
+    "market_transit_baseline",
+    "dist_x_peak",
+    "dist_x_weekend"
+  ],
+  "feature_count": 11
+}

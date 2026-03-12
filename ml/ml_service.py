@@ -4,7 +4,7 @@ TakuraBid Pricing API - Fast API Prototype
 ═══════════════════════════════════════════════════════════════════════════
 Real-time pricing endpoint for truck hauling loads.
 
-Run: python ml/api.py
+Run: python ml/ml_service.py
 Then: Open http://localhost:8000/docs (Swagger UI for testing)
 Or: Visit http://localhost:8000 for web demo
 """
@@ -70,7 +70,7 @@ def load_model(version: str = "v2_current"):
 
 # Load on startup
 logger.info("Loading model...")
-MODEL, SCALER, METADATA = load_model("v2_current")
+MODEL, SCALER, METADATA = load_model("v3_optimized")
 FEATURES = METADATA.get("features", [])
 
 logger.info(f"Using {len(FEATURES)} features: {FEATURES}")
@@ -351,45 +351,41 @@ async def home():
 
 
 def engineer_features_from_request(request: PricingRequest) -> np.ndarray:
-    """Engineer features from API request to match training features."""
-    # Create feature array matching the model's expected features
+    """Engineer features from API request to match v3_optimized features (11 features)."""
+    import zimbabwe_market_rates as mb
+    
     hour = request.hour
     day_of_week = request.day_of_week
     distance = request.distance
+    temp = request.temperature or 25.0
     
-    # Compute engineered features (matching data_pipeline.py)
-    hour_sin = np.sin(2 * np.pi * hour / 24)
-    hour_cos = np.cos(2 * np.pi * hour / 24)
-    day_sin = np.sin(2 * np.pi * day_of_week / 7)
-    day_cos = np.cos(2 * np.pi * day_of_week / 7)
-    
+    # Distance scales
     distance_log = np.log1p(distance)
     distance_sqrt = np.sqrt(distance)
-    distance_squared = distance ** 2
     
+    # Market Interaction (Zimbabwe specific)
+    rate = mb.MARKET_RATES["logistics_heavy"]["per_ton_km"]
+    base_fee = mb.MARKET_RATES["logistics_heavy"]["minimum_load_fee"]
+    market_baseline = (distance * 1.0 * rate) + base_fee
+    market_diff_ratio = market_baseline / (distance + 0.1)
+    market_transit_baseline = (distance * mb.MARKET_RATES["ride_hailing"]["per_km"]) + mb.MARKET_RATES["ride_hailing"]["base_fare"]
+    
+    # Interactions
     is_peak_hour = 1 if ((hour >= 7 and hour <= 9) or (hour >= 16 and hour <= 19)) else 0
     is_weekend = 1 if day_of_week >= 5 else 0
+    dist_x_peak = distance * is_peak_hour
+    dist_x_weekend = distance * is_weekend
     
-    hour_to_peak = min(abs(hour - 8), abs(hour - 17.5), abs(hour - 24))
-    
-    # Build feature array in same order as scaler expects (13 features)
-    # Must match: ['distance', 'hour', 'day_of_week', 'hour_sin', 'hour_cos', 
-    #             'day_sin', 'day_cos', 'distance_log', 'distance_sqrt', 
-    #             'distance_squared', 'is_peak_hour', 'is_weekend', 'hour_to_peak']
+    # Build feature array in V3.1 Order (11 features):
+    # ["distance", "hour", "day_of_week", "temperature",
+    #  "distance_log", "distance_sqrt",
+    #  "market_baseline", "market_diff_ratio", "market_transit_baseline",
+    #  "dist_x_peak", "dist_x_weekend"]
     features = [
-        distance,           # 0
-        hour,              # 1
-        day_of_week,       # 2
-        hour_sin,          # 3
-        hour_cos,          # 4
-        day_sin,           # 5
-        day_cos,           # 6
-        distance_log,      # 7
-        distance_sqrt,     # 8
-        distance_squared,  # 9
-        is_peak_hour,      # 10
-        is_weekend,        # 11
-        hour_to_peak,      # 12
+        distance, hour, day_of_week, temp,
+        distance_log, distance_sqrt,
+        market_baseline, market_diff_ratio, market_transit_baseline,
+        dist_x_peak, dist_x_weekend
     ]
     
     return np.array([features])
@@ -398,10 +394,14 @@ def engineer_features_from_request(request: PricingRequest) -> np.ndarray:
 @app.post("/estimate", response_model=PricingResponse)
 async def estimate_price(request: PricingRequest):
     """
-    Estimate price for a ride.
+    Estimate price for Zimbabwe logistics.
     
-    Takes distance, time, weather and returns estimated price.
+    The ML model was trained on generic ride data ($2-$92).
+    We scale predictions to realistic Zimbabwe freight pricing using
+    market benchmarks (Swift, Bolt, inDrive rates) as anchors.
     """
+    import zimbabwe_market_rates as mb
+    
     try:
         logger.info(f"Input: distance={request.distance}km, hour={request.hour}, day={request.day_of_week}")
         
@@ -414,50 +414,104 @@ async def estimate_price(request: PricingRequest):
         else:
             X_scaled = X
         
-        # Predict
-        prediction = MODEL.predict(X_scaled)[0]
+        # Raw ML prediction (in $2-$92 training range)
+        raw_prediction = float(MODEL.predict(X_scaled)[0])
+        raw_prediction = max(2.50, min(100.0, raw_prediction))
         
-        # Ensure positive price
-        estimated_price = max(2.50, min(200.0, float(prediction)))  # Clip to reasonable range
+        # =====================================================
+        # ZIMBABWE MARKET SCALING
+        # =====================================================
+        # The model learns RELATIVE pricing patterns (peak hours,
+        # weekends, distance scaling). We anchor these to real
+        # Zimbabwe logistics rates.
         
-        # Create breakdown (base + surcharges)
-        base_price = estimated_price * 0.65
-        distance_surcharge = (request.distance / 50) * 5
-        time_surcharge = 2 if (request.hour >= 7 and request.hour <= 9) or (request.hour >= 17 and request.hour <= 19) else 0
-        weather_surcharge = request.precipitation * 0.5 if request.precipitation else 0
+        distance = request.distance
+        
+        # 1. Calculate Zimbabwe market baseline (ton-km model)
+        #    Using 1.0 ton default; API consumers can pass weight
+        weight_tons = getattr(request, 'weight_tons', 1.0) or 1.0
+        zw_baseline = mb.calculate_market_baseline(
+            distance_km=distance,
+            weight_tons=weight_tons,
+            urgency="Standard"
+        )
+        
+        # 2. Transit baseline (lighter cargo / ride-hailing scale)
+        transit_baseline = (distance * mb.MARKET_RATES["ride_hailing"]["per_km"]) + mb.MARKET_RATES["ride_hailing"]["base_fare"]
+        
+        # 3. Compute model's relative signal
+        #    How much does the model deviate from mean price ($16.50)?
+        training_mean = 16.50
+        relative_signal = (raw_prediction - training_mean) / training_mean  # e.g., +0.10 means 10% above average
+        
+        # 4. Blend: Use market baseline as anchor, modulate by model signal
+        #    - For heavy logistics (distance > 50km): anchor to zw_baseline
+        #    - For short urban runs (< 50km): anchor to transit_baseline
+        if distance >= 50:
+            anchor = zw_baseline
+        else:
+            anchor = max(transit_baseline, zw_baseline * 0.5)
+        
+        # Apply the model's learned adjustments (±30% max influence)
+        model_adjustment = 1.0 + (relative_signal * 0.3)
+        model_adjustment = max(0.7, min(1.3, model_adjustment))
+        
+        # Peak hour surcharge (model learned this pattern)
+        is_peak = (request.hour >= 7 and request.hour <= 9) or (request.hour >= 16 and request.hour <= 19)
+        peak_multiplier = 1.08 if is_peak else 1.0
+        
+        # Weekend premium
+        is_weekend = request.day_of_week >= 5
+        weekend_multiplier = 1.05 if is_weekend else 1.0
+        
+        # Final Zimbabwe-scaled price
+        estimated_price = anchor * model_adjustment * peak_multiplier * weekend_multiplier
+        
+        # Enforce realistic bounds for Zimbabwe logistics
+        min_price = max(15.0, transit_baseline * 0.8)
+        max_price = zw_baseline * 2.5
+        estimated_price = max(min_price, min(max_price, estimated_price))
+        estimated_price = round(estimated_price, 2)
+        
+        # =====================================================
+        # PRICE BREAKDOWN
+        # =====================================================
+        base_rate = anchor * 0.70
+        distance_component = anchor * 0.20
+        time_adjustment = (peak_multiplier - 1.0) * anchor + (weekend_multiplier - 1.0) * anchor
+        model_intelligence = estimated_price - base_rate - distance_component - time_adjustment
         
         total_breakdown = {
-            "base_price": round(base_price, 2),
-            "distance_surcharge": round(distance_surcharge, 2),
-            "time_surcharge": round(time_surcharge, 2),
-            "weather_surcharge": round(weather_surcharge, 2),
+            "base_rate": round(base_rate, 2),
+            "distance_component": round(distance_component, 2),
+            "time_adjustment": round(max(0, time_adjustment), 2),
+            "ai_adjustment": round(max(0, model_intelligence), 2),
         }
         
-        # Verify breakdown adds up
+        # Normalize breakdown to match total
         breakdown_total = sum(total_breakdown.values())
         if breakdown_total > 0:
-            # Scale to match prediction
             scale_factor = estimated_price / breakdown_total
             total_breakdown = {k: round(v * scale_factor, 2) for k, v in total_breakdown.items()}
         
-        # Confidence (based on model R²)
-        base_confidence = METADATA.get('history', {}).get('test', {}).get('r2', 0.085)
-        confidence = min(0.95, max(0.50, base_confidence + 0.50))  # Adjusted for prototype
+        # Confidence
+        base_confidence = METADATA.get('history', {}).get('test', {}).get('r2', 0.14)
+        confidence = min(0.85, max(0.55, base_confidence + 0.50))
         
-        # Range (±15%)
+        # Range (±12%)
         price_range = {
-            "min": round(estimated_price * 0.85, 2),
-            "max": round(estimated_price * 1.15, 2),
+            "min": round(estimated_price * 0.88, 2),
+            "max": round(estimated_price * 1.12, 2),
         }
         
-        logger.info(f"Output: ${estimated_price:.2f} (confidence: {confidence:.0%})")
+        logger.info(f"Output: ${estimated_price:.2f} (raw ML: ${raw_prediction:.2f}, anchor: ${anchor:.2f}, confidence: {confidence:.0%})")
         
         return PricingResponse(
             estimate_usd=round(estimated_price, 2),
             confidence=confidence,
             breakdown=total_breakdown,
             range=price_range,
-            model_version="v2_current",
+            model_version="v3_optimized",
             timestamp=datetime.now().isoformat(),
         )
     
@@ -471,7 +525,7 @@ async def health():
     """Health check endpoint."""
     return {
         "status": "healthy",
-        "model": "v2_current",
+        "model": "v3_optimized",
         "features": len(FEATURES),
         "timestamp": datetime.now().isoformat(),
     }
@@ -482,7 +536,7 @@ async def model_info():
     """Get model information."""
     history = METADATA.get('history', {})
     return {
-        "version": "v2_current",
+        "version": "v3_optimized",
         "features": FEATURES,
         "feature_count": len(FEATURES),
         "training_r2": round(history.get('train', {}).get('r2', 0), 4),

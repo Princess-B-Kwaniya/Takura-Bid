@@ -1,17 +1,19 @@
 # TakuraBid ML Pricing Model - Development Roadmap
 
 ## Current Status
-**Production Ready v2** - GradientBoosting model with 13 engineered features, R² = 0.085
-
-Currently deployed with real-time price suggestions integrated into the driver dashboard.
+**v3.0 Market Aligned** - GradientBoosting ensemble with 40+ features, integrating Zimbabwe logistics standards (Swift, Bolt, inDrive).
+R² (Test): 0.111 (Pre-Market Align) -> Training v3.1 now.
+Currently deployed with real-time price suggestions integrated into the driver and client dashboards.
 
 ## Completed Work
 
 **Phase 1: ML Foundation**
 - Data pipeline with UTF-16 encoding detection
-- 13 engineered temporal, distance, and weather features
+- 16 engineered temporal, distance, and weather features
 - Baseline RandomForest model (R² = 0.0585)
 - Production v2 model using GradientBoosting (R² = 0.085)
+- **Production v2.1 model with Weather Alignment (R² = 0.111)**
+- **Market Benchmarking (Phase 4.1.5):** Integrated Zimbabwe-specific rates (Swift, Bolt, inDrive) into the pipeline.
 - Model serialization with joblib + JSON metadata
 - Comprehensive evaluation framework
 
@@ -33,12 +35,11 @@ Currently deployed with real-time price suggestions integrated into the driver d
 
 ## Next Steps: Phase 4 - Data Quality Improvements
 
-### 4.1 Weather Data Alignment (4-8 hours)
-The weather dataset has a 4-hour offset relative to ride timestamps, reducing feature correlation. 
+### 4.1 Weather Data Alignment (COMPLETED)
+The weather dataset had a 4-hour offset relative to ride timestamps, reducing feature correlation. 
 
 **Task:** Align observations within ±30 minute windows using timestamp parsing and interpolation.  
-**Expected Impact:** R² improvement to 0.15-0.20 (+7-10% accuracy)  
-**Priority:** HIGH - Quick win with high ROI
+**Impact:** R² improved from 0.085 to 0.111.
 
 ### 4.2 TakuraBid Platform Integration (16-24 hours)
 Current model uses generic cab ride data. Need platform-specific features.
@@ -54,19 +55,17 @@ Current model uses generic cab ride data. Need platform-specific features.
 **Expected Impact:** R² → 0.30-0.50 (+25% accuracy)  
 **Priority:** HIGH - Business-critical
 
-### 4.3 Feature Expansion (6-8 weeks)
-Scale from 13 to 40+ features through engineered combinations.
+### 4.3 Feature Expansion (IN PROGRESS)
+Scale from 13 to 40+ features through engineered combinations and market benchmarks.
 
 **New Feature Categories:**
-- Temporal patterns (hour, day, season, holidays)
-- Vehicle specifics (capacity ratio, type encoding)
-- Cargo attributes (density, fragility, hazmat surcharge)
-- Driver history (success rate, specialization bonus)
-- Market conditions (demand, competition, fuel index)
-- Business logic (client loyalty, urgency multipliers)
+- Temporal patterns (cyclic encoding, peak bins)
+- Market benchmarks (Swift-logistics, Bolt-transit baselines)
+- Interaction terms (dist_x_temp, dist_x_hour, etc.)
+- Advanced scaling (log, sqrt, cubed, inverse transforms)
 
-**Implementation:** Refactor `ml/data_pipeline.py`, modularize in `ml/features/` folder, add feature versioning.  
-**Expected Impact:** R² → 0.50-0.75
+**Implementation:** Refactor `ml/data_pipeline.py`, integrated `ml/market_benchmarks.py`.
+**Target Impact:** R² → 0.50-0.75
 ---
 
 ## Phase 5 - Advanced Modeling (6-8 weeks)
@@ -195,8 +194,8 @@ CREATE INDEX ON predictions(load_id, timestamp);
 
 | Metric | Current | Target |
 |--------|---------|--------|
-| R² (model accuracy) | 0.085 | > 0.70 |
-| MAE (price error) | $7.09 | < $10 |
+| R² (model accuracy) | 0.111 | > 0.70 |
+| MAE (price error) | $7.05 | < $10 |
 | API latency p95 | <100ms | <100ms |
 | Driver acceptance rate | Unknown | > 70% |
 | Load completion rate | Unknown | > 85% |

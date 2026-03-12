@@ -13,9 +13,10 @@ from typing import Dict, List, Any
 # PROJECT PATHS
 # ============================================================================
 PROJECT_ROOT = Path(__file__).parent.parent
-DATA_DIR = PROJECT_ROOT / "data" / "cab-weather"
-MODELS_DIR = PROJECT_ROOT / "ml" / "models"
-OUTPUTS_DIR = PROJECT_ROOT / "ml" / "outputs"
+ML_ROOT = PROJECT_ROOT / "ml"
+DATA_DIR = ML_ROOT / "data" / "cab-weather"
+MODELS_DIR = ML_ROOT / "models"
+OUTPUTS_DIR = ML_ROOT / "ml_plots"
 
 # Create directories if they don't exist
 MODELS_DIR.mkdir(exist_ok=True)
@@ -114,6 +115,91 @@ MODEL_VERSIONS = {
             "verbose": 0,
         },
         "description": "Advanced model with engineered features and Gradient Boosting",
+    },
+    "v2_expanded": {
+        "name": "Gradient Boosting (Expanded)",
+        "model_type": "GradientBoostingRegressor",
+        "version": "v2.1",
+        "features": [
+            # Core
+            "distance", "hour", "day_of_week", "day_of_month", "month", "temperature", "precipitation",
+            # Temporal Cyclic
+            "hour_sin", "hour_cos", "day_sin", "day_cos", "month_sin", "month_cos",
+            # Bins & Flags
+            "is_weekend", "is_peak_hour", "hour_to_peak", 
+            "is_morning", "is_afternoon", "is_evening", "is_night",
+            # Distance scales
+            "distance_log", "distance_sqrt", "distance_squared", "distance_cubed", "distance_inv",
+            # Weather processing
+            "temp_squared", "temp_log", "is_freezing", "is_hot", 
+            "has_precipitation", "has_rain", "rain_heavy", "high_wind", "high_humidity",
+            # Interaction terms
+            "dist_x_temp", "dist_x_hour", "dist_x_peak", "dist_x_weekend", "dist_x_rain", "temp_x_hour"
+        ],
+        "model_params": {
+            "n_estimators": 250,
+            "learning_rate": 0.05,
+            "max_depth": 8,
+            "min_samples_split": 4,
+            "min_samples_leaf": 2,
+            "subsample": 0.85,
+            "random_state": 42,
+            "verbose": 0,
+        },
+        "description": "Expanded feature set to over 40 features using engineered combinations",
+    },
+    "v3_market_aligned": {
+        "name": "Market Aligned Ensemble",
+        "model_type": "GradientBoostingRegressor",
+        "version": "v3.0",
+        "features": [
+            # Core
+            "distance", "hour", "day_of_week", "temperature", 
+            # Bins & Flags
+            "is_peak_hour", "is_weekend",
+            # Distance scales
+            "distance_log", "distance_sqrt", 
+            # Weather
+            "has_precipitation", "high_wind",
+            # Market Interaction (Zimbabwe specific)
+            "market_baseline", "market_diff_ratio", "market_transit_baseline",
+            # Dynamic Interactions
+            "dist_x_peak", "dist_x_weekend"
+        ],
+        "model_params": {
+            "n_estimators": 300,
+            "learning_rate": 0.04,
+            "max_depth": 10,
+            "min_samples_split": 3,
+            "min_samples_leaf": 3,
+            "subsample": 0.9,
+            "random_state": 42,
+            "verbose": 0,
+        },
+        "description": "Model aligned with Zimbabwe market benchmarks (Swift, Bolt, inDrive)",
+    },
+    "v3_optimized": {
+        "name": "Optimized LightGBM",
+        "model_type": "LGBMRegressor",
+        "version": "v3.1",
+        "features": [
+            "distance", "hour", "day_of_week", "temperature", 
+            "distance_log", "distance_sqrt", 
+            "market_baseline", "market_diff_ratio", "market_transit_baseline",
+            "dist_x_peak", "dist_x_weekend"
+        ],
+        "model_params": {
+            "n_estimators": 445,
+            "max_depth": 5,
+            "learning_rate": 0.0321687582436235,
+            "num_leaves": 27,
+            "feature_fraction": 0.7780505351713435,
+            "bagging_fraction": 0.8243973586451594,
+            "bagging_freq": 3,
+            "random_state": 42,
+            "verbose": -1
+        },
+        "description": "Hyperparameter tuned LightGBM with Optuna and pruned features",
     },
     "v3_production": {
         "name": "Ensemble (Production Target)",
@@ -320,7 +406,7 @@ PHASE 6 - PRODUCTION & MONITORING (Ongoing)
 # ============================================================================
 def get_current_version() -> str:
     """Get the current active model version."""
-    return "v2_current"
+    return "v3_optimized"
 
 
 def get_model_config(version: str = None) -> Dict[str, Any]:

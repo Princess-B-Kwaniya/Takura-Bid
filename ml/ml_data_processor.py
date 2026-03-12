@@ -11,10 +11,11 @@ import pandas as pd
 from pathlib import Path
 from typing import Tuple, Optional, Dict, Any
 import logging
-from config import (
+from ml_config import (
     DATA_CONFIG, FEATURE_GROUPS, PREPROCESSING_CONFIG,
     OUTPUTS_DIR, LOGGING_CONFIG
 )
+import zimbabwe_market_rates as mb
 
 # ============================================================================
 # LOGGING SETUP
@@ -135,6 +136,12 @@ def clean_rides_data(df: pd.DataFrame) -> pd.DataFrame:
     for col in numeric_cols:
         if df[col].isna().any():
             df[col].fillna(df[col].mean(), inplace=True)
+            
+    # Parse timestamp into proper datetime column
+    if 'time_stamp' in df.columns:
+        df['datetime'] = pd.to_datetime(df['time_stamp'], unit='ms')
+    elif 'timestamp' in df.columns:
+        df['datetime'] = pd.to_datetime(df['timestamp'], unit='ms')
     
     logger.info(f"✓ Cleaned data shape: {df.shape}")
     return df
@@ -149,15 +156,21 @@ def clean_weather_data(df: pd.DataFrame) -> pd.DataFrame:
     # Standardize column names
     df.columns = df.columns.str.strip().str.lower().str.replace(" ", "_")
     
-    # Handle datetime columns
-    date_cols = [col for col in df.columns if 'date' in col or 'time' in col]
-    for col in date_cols:
-        if col in df.columns:
-            df[col] = pd.to_datetime(df[col], errors='coerce')
+    # Handle datetime columns (timestamp in weather is in seconds)
+    if 'time_stamp' in df.columns:
+        df['datetime'] = pd.to_datetime(df['time_stamp'], unit='s')
+        # Weather data is offset by 4 hours, adjust to match ride timezone
+        df['datetime'] = df['datetime'] + pd.Timedelta(hours=4)
+    elif 'timestamp' in df.columns:
+        df['datetime'] = pd.to_datetime(df['timestamp'], unit='s')
+        df['datetime'] = df['datetime'] + pd.Timedelta(hours=4)
     
     # Remove rows with missing values in key weather columns
     weather_cols = [col for col in df.columns if col not in ['date', 'datetime', 'timestamp']]
     df = df.dropna(subset=weather_cols, how='all')
+    
+    if 'temp' in df.columns and 'temperature' not in df.columns:
+        df = df.rename(columns={'temp': 'temperature'})
     
     logger.info(f"✓ Cleaned weather shape: {df.shape}")
     return df
@@ -215,7 +228,13 @@ def engineer_features(df: pd.DataFrame) -> pd.DataFrame:
         lambda h: min(abs(h - 8), abs(h - 17.5), abs(h - 24))
     )
     
-    logger.info("  ✓ Temporal features: hour, day, cyclic, peak_hour")
+    # Time of day bins
+    df['is_morning'] = ((df['hour'] >= 6) & (df['hour'] <= 11)).astype(int)
+    df['is_afternoon'] = ((df['hour'] >= 12) & (df['hour'] <= 17)).astype(int)
+    df['is_evening'] = ((df['hour'] >= 18) & (df['hour'] <= 23)).astype(int)
+    df['is_night'] = ((df['hour'] >= 0) & (df['hour'] <= 5)).astype(int)
+    
+    logger.info("  ✓ Temporal features: hour, day, cyclic, peak_hour, bins")
     
     # ───────────────────────────────────────────────────────────────────────
     # CORE FEATURES (from rides data)
@@ -226,7 +245,10 @@ def engineer_features(df: pd.DataFrame) -> pd.DataFrame:
         df['distance_log'] = np.log1p(df['distance'])
         df['distance_sqrt'] = np.sqrt(df['distance'])
         df['distance_squared'] = df['distance'] ** 2
-        logger.info("  ✓ Distance features: log, sqrt, squared")
+        # Advanced polynomials
+        df['distance_cubed'] = df['distance'] ** 3
+        df['distance_inv'] = 1 / (df['distance'] + 0.01)
+        logger.info("  ✓ Distance features: log, sqrt, squared, cubed, inv")
     
     # ───────────────────────────────────────────────────────────────────────
     # WEATHER FEATURES
@@ -235,11 +257,64 @@ def engineer_features(df: pd.DataFrame) -> pd.DataFrame:
     # Temperature features
     if 'temperature' in df.columns:
         df['temp_squared'] = df['temperature'] ** 2
-        logger.info("  ✓ Temperature features: squared")
+        df['temp_log'] = np.log1p(np.maximum(df['temperature'], 0))
+        df['is_freezing'] = (df['temperature'] < 32).astype(int) # assuming Fahrenheit
+        df['is_hot'] = (df['temperature'] > 85).astype(int)
+        logger.info("  ✓ Temperature features: squared, log, thresholds")
     
     # Additional weather processing
     if 'precipitation' in df.columns:
         df['has_precipitation'] = (df['precipitation'] > 0).astype(int)
+        
+    if 'rain' in df.columns:
+        df['has_rain'] = (df['rain'] > 0).astype(int)
+        df['rain_heavy'] = (df['rain'] > 0.1).astype(int)
+        
+    if 'wind' in df.columns:
+        df['high_wind'] = (df['wind'] > 15).astype(int)
+        
+    if 'humidity' in df.columns:
+        df['high_humidity'] = (df['humidity'] > 0.8).astype(int)
+        
+    # ───────────────────────────────────────────────────────────────────────
+    # CONTINUOUS INTERACTION FEATURES
+    # ───────────────────────────────────────────────────────────────────────
+    if 'distance' in df.columns and 'temperature' in df.columns:
+        df['dist_x_temp'] = df['distance'] * df['temperature']
+        
+    if 'distance' in df.columns and 'hour' in df.columns:
+        df['dist_x_hour'] = df['distance'] * df['hour']
+        df['dist_x_peak'] = df['distance'] * df['is_peak_hour']
+        df['dist_x_weekend'] = df['distance'] * df['is_weekend']
+        
+    if 'temperature' in df.columns and 'hour' in df.columns:
+        df['temp_x_hour'] = df['temperature'] * df['hour']
+        
+    if 'distance' in df.columns and 'rain' in df.columns:
+        df['dist_x_rain'] = df['distance'] * df['rain']
+
+    # ───────────────────────────────────────────────────────────────────────
+    # MARKET BENCHMARK FEATURES (Zimbabwe Standards)
+    # ───────────────────────────────────────────────────────────────────────
+    if 'distance' in df.columns:
+        # Calculate market baseline for each row
+        # using temporary helper to map urgency if available, else standard
+        urgency_map = df['urgency'] if 'urgency' in df.columns else ['Standard'] * len(df)
+        
+        # Vectorized market baseline (simplified logic from mb)
+        rate = mb.MARKET_RATES["logistics_heavy"]["per_ton_km"]
+        base_fee = mb.MARKET_RATES["logistics_heavy"]["minimum_load_fee"]
+        
+        # Assume 1 ton if not present (baseline normalization)
+        weight_val = df['weight_tons'] if 'weight_tons' in df.columns else 1.0
+        
+        df['market_baseline'] = (df['distance'] * weight_val * rate) + base_fee
+        df['market_diff_ratio'] = df['market_baseline'] / (df['distance'] + 0.1)
+        
+        # Ride hailing benchmark (Transit)
+        df['market_transit_baseline'] = (df['distance'] * mb.MARKET_RATES["ride_hailing"]["per_km"]) + mb.MARKET_RATES["ride_hailing"]["base_fare"]
+        
+        logger.info("  ✓ Market benchmark features: baseline, ratio, transit_baseline")
     
     # ───────────────────────────────────────────────────────────────────────
     # PLACEHOLDER FEATURES (for future TakuraBid integration)
@@ -354,16 +429,39 @@ def prepare_data(
     rides_df = clean_rides_data(rides_df)
     weather_df = clean_weather_data(weather_df)
     
-    # Merge weather into rides (simple merge on date)
-    if any('date' in col.lower() for col in rides_df.columns):
-        rides_col = [col for col in rides_df.columns if 'date' in col.lower()][0]
-        rides_df['date'] = pd.to_datetime(rides_df[rides_col]).dt.date
-    
-    if any('date' in col.lower() for col in weather_df.columns):
-        weather_col = [col for col in weather_df.columns if 'date' in col.lower()][0]
-        weather_df['date'] = pd.to_datetime(weather_df[weather_col]).dt.date
+    # Merge weather into rides (within +/- 30 min window)
+    if 'datetime' in rides_df.columns and 'datetime' in weather_df.columns:
+        rides_df['datetime'] = rides_df['datetime'].astype('datetime64[ns]')
+        weather_df['datetime'] = weather_df['datetime'].astype('datetime64[ns]')
         
-        rides_df = rides_df.merge(weather_df, on='date', how='left')
+        rides_df = rides_df.sort_values('datetime')
+        weather_df = weather_df.sort_values('datetime')
+        
+        # Merge on source and location
+        if 'source' in rides_df.columns and 'location' in weather_df.columns:
+            weather_df = weather_df.rename(columns={'location': 'source'})
+            rides_df = pd.merge_asof(
+                rides_df, 
+                weather_df, 
+                on='datetime', 
+                by='source',
+                direction='nearest',
+                tolerance=pd.Timedelta(minutes=30)
+            )
+        else:
+            rides_df = pd.merge_asof(
+                rides_df, 
+                weather_df, 
+                on='datetime', 
+                direction='nearest',
+                tolerance=pd.Timedelta(minutes=30)
+            )
+        
+        # After merging, filling NA for weather fields
+        weather_cols = ['temp', 'clouds', 'pressure', 'rain', 'humidity', 'wind', 'temperature']
+        for c in weather_cols:
+            if c in rides_df.columns:
+                rides_df[c] = rides_df[c].fillna(rides_df[c].mean() if pd.api.types.is_numeric_dtype(rides_df[c]) else 0)
     
     # Engineer features
     rides_df = engineer_features(rides_df)
@@ -382,14 +480,14 @@ def prepare_data(
 
 
 if __name__ == "__main__":
-    from config import DATA_CONFIG, MODEL_VERSIONS
+    from ml_config import DATA_CONFIG, MODEL_VERSIONS, get_current_version
     
     print("═" * 75)
     print("Data & Feature Engineering Pipeline")
     print("═" * 75)
     
     # Load and prepare data
-    features = MODEL_VERSIONS["v2_current"]["features"]
+    features = MODEL_VERSIONS[get_current_version()]["features"]
     
     try:
         X, y = prepare_data(

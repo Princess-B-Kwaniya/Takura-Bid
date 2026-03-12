@@ -1,0 +1,70 @@
+{
+  "version": "v3_market_aligned",
+  "timestamp": "20260312_140611",
+  "config": {
+    "name": "Market Aligned Ensemble",
+    "model_type": "GradientBoostingRegressor",
+    "version": "v3.0",
+    "features": [
+      "distance",
+      "hour",
+      "day_of_week",
+      "temperature",
+      "is_peak_hour",
+      "is_weekend",
+      "distance_log",
+      "distance_sqrt",
+      "has_precipitation",
+      "high_wind",
+      "market_baseline",
+      "market_diff_ratio",
+      "market_transit_baseline",
+      "dist_x_peak",
+      "dist_x_weekend"
+    ],
+    "model_params": {
+      "n_estimators": 300,
+      "learning_rate": 0.04,
+      "max_depth": 10,
+      "min_samples_split": 3,
+      "min_samples_leaf": 3,
+      "subsample": 0.9,
+      "random_state": 42,
+      "verbose": 0
+    },
+    "description": "Model aligned with Zimbabwe market benchmarks (Swift, Bolt, inDrive)"
+  },
+  "history": {
+    "train": {
+      "mae": 5.790996713276146,
+      "rmse": 7.105298406346449,
+      "r2": 0.41648789312938717
+    },
+    "test": {
+      "mae": 7.1485698905924515,
+      "rmse": 8.830417158854543,
+      "r2": 0.07994585463326165,
+      "accuracy_within_10": 74.77448103467015,
+      "accuracy_within_5": 38.7675252689925,
+      "accuracy_within_20pct": 24.986414520160853
+    }
+  },
+  "features": [
+    "distance",
+    "hour",
+    "day_of_week",
+    "temperature",
+    "is_peak_hour",
+    "is_weekend",
+    "distance_log",
+    "distance_sqrt",
+    "has_precipitation",
+    "high_wind",
+    "market_baseline",
+    "market_diff_ratio",
+    "market_transit_baseline",
+    "dist_x_peak",
+    "dist_x_weekend"
+  ],
+  "feature_count": 15
+}

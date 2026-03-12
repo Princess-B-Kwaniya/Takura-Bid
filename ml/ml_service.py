@@ -4,7 +4,7 @@ TakuraBid Pricing API - Fast API Prototype
 ═══════════════════════════════════════════════════════════════════════════
 Real-time pricing endpoint for truck hauling loads.
 
-Run: python ml/api.py
+Run: python ml/ml_service.py
 Then: Open http://localhost:8000/docs (Swagger UI for testing)
 Or: Visit http://localhost:8000 for web demo
 """
@@ -352,7 +352,7 @@ async def home():
 
 def engineer_features_from_request(request: PricingRequest) -> np.ndarray:
     """Engineer features from API request to match v3_optimized features (11 features)."""
-    import market_benchmarks as mb
+    import zimbabwe_market_rates as mb
     
     hour = request.hour
     day_of_week = request.day_of_week
@@ -400,7 +400,7 @@ async def estimate_price(request: PricingRequest):
     We scale predictions to realistic Zimbabwe freight pricing using
     market benchmarks (Swift, Bolt, inDrive rates) as anchors.
     """
-    import market_benchmarks as mb
+    import zimbabwe_market_rates as mb
     
     try:
         logger.info(f"Input: distance={request.distance}km, hour={request.hour}, day={request.day_of_week}")

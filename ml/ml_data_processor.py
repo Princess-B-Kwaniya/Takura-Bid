@@ -11,11 +11,11 @@ import pandas as pd
 from pathlib import Path
 from typing import Tuple, Optional, Dict, Any
 import logging
-from config import (
+from ml_config import (
     DATA_CONFIG, FEATURE_GROUPS, PREPROCESSING_CONFIG,
     OUTPUTS_DIR, LOGGING_CONFIG
 )
-import market_benchmarks as mb
+import zimbabwe_market_rates as mb
 
 # ============================================================================
 # LOGGING SETUP
@@ -480,7 +480,7 @@ def prepare_data(
 
 
 if __name__ == "__main__":
-    from config import DATA_CONFIG, MODEL_VERSIONS, get_current_version
+    from ml_config import DATA_CONFIG, MODEL_VERSIONS, get_current_version
     
     print("═" * 75)
     print("Data & Feature Engineering Pipeline")

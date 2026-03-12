@@ -40,6 +40,19 @@ next-env.d.ts
 Thumbs.db
 
 # Large data files
-data/cab-weather/cab_rides.txt
-data/cab-weather/weather.txt
+ml/data/cab-weather/*.txt
+ml/data/cab-weather/*.csv
 *.joblib
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+.env
+.vh/
+.venv/
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/

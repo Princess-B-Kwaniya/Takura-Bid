@@ -27,11 +27,11 @@ from sklearn.metrics import (
 )
 import joblib
 
-from config import (
+from ml_config import (
     DATA_CONFIG, MODEL_VERSIONS, MODELS_DIR,
     PERFORMANCE_TARGETS, FEATURE_GROUPS,
 )
-from data_pipeline import prepare_data
+from ml_data_processor import prepare_data
 
 # ============================================================================
 # LOGGING

@@ -12,8 +12,8 @@ from sklearn.ensemble import RandomForestRegressor
 from pathlib import Path
 import logging
 
-from data_pipeline import prepare_data
-from config import DATA_CONFIG, MODEL_VERSIONS, get_current_version
+from ml_data_processor import prepare_data
+from ml_config import DATA_CONFIG, MODEL_VERSIONS, get_current_version
 
 # Logging
 logging.basicConfig(level=logging.INFO)

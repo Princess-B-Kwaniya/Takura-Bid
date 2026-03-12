@@ -22,7 +22,7 @@ try:
     print(f"  {response.json()}")
 except Exception as e:
     print(f"✗ Failed: {e}")
-    print("  Make sure API is running: python ml/api.py")
+    print("  Make sure API is running: python ml/ml_service.py")
 
 print()
 

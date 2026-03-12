@@ -13,9 +13,10 @@ from typing import Dict, List, Any
 # PROJECT PATHS
 # ============================================================================
 PROJECT_ROOT = Path(__file__).parent.parent
-DATA_DIR = PROJECT_ROOT / "data" / "cab-weather"
-MODELS_DIR = PROJECT_ROOT / "ml" / "models"
-OUTPUTS_DIR = PROJECT_ROOT / "ml" / "outputs"
+ML_ROOT = PROJECT_ROOT / "ml"
+DATA_DIR = ML_ROOT / "data" / "cab-weather"
+MODELS_DIR = ML_ROOT / "models"
+OUTPUTS_DIR = ML_ROOT / "ml_plots"
 
 # Create directories if they don't exist
 MODELS_DIR.mkdir(exist_ok=True)

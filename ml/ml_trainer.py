@@ -53,11 +53,11 @@ from sklearn.metrics import (
     r2_score,
 )
 
-from config import (
+from ml_config import (
     DATA_CONFIG, MODEL_VERSIONS, MODELS_DIR, OUTPUTS_DIR,
     PREPROCESSING_CONFIG, LOGGING_CONFIG, PERFORMANCE_TARGETS,
 )
-from data_pipeline import prepare_data
+from ml_data_processor import prepare_data
 
 # ============================================================================
 # LOGGING

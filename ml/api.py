@@ -70,7 +70,7 @@ def load_model(version: str = "v2_current"):
 
 # Load on startup
 logger.info("Loading model...")
-MODEL, SCALER, METADATA = load_model("v2_current")
+MODEL, SCALER, METADATA = load_model("v3_market_aligned")
 FEATURES = METADATA.get("features", [])
 
 logger.info(f"Using {len(FEATURES)} features: {FEATURES}")
@@ -351,45 +351,55 @@ async def home():
 
 
 def engineer_features_from_request(request: PricingRequest) -> np.ndarray:
-    """Engineer features from API request to match training features."""
-    # Create feature array matching the model's expected features
+    """Engineer features from API request to match v3_market_aligned features."""
+    import market_benchmarks as mb
+    
     hour = request.hour
     day_of_week = request.day_of_week
     distance = request.distance
+    temp = request.temperature or 25.0
+    precip = request.precipitation or 0.0
     
-    # Compute engineered features (matching data_pipeline.py)
-    hour_sin = np.sin(2 * np.pi * hour / 24)
-    hour_cos = np.cos(2 * np.pi * hour / 24)
-    day_sin = np.sin(2 * np.pi * day_of_week / 7)
-    day_cos = np.cos(2 * np.pi * day_of_week / 7)
+    # 1. Core
+    # features list order: ["distance", "hour", "day_of_week", "temperature", ...]
     
-    distance_log = np.log1p(distance)
-    distance_sqrt = np.sqrt(distance)
-    distance_squared = distance ** 2
-    
+    # 2. Bins & Flags
     is_peak_hour = 1 if ((hour >= 7 and hour <= 9) or (hour >= 16 and hour <= 19)) else 0
     is_weekend = 1 if day_of_week >= 5 else 0
     
-    hour_to_peak = min(abs(hour - 8), abs(hour - 17.5), abs(hour - 24))
+    # 3. Distance scales
+    distance_log = np.log1p(distance)
+    distance_sqrt = np.sqrt(distance)
     
-    # Build feature array in same order as scaler expects (13 features)
-    # Must match: ['distance', 'hour', 'day_of_week', 'hour_sin', 'hour_cos', 
-    #             'day_sin', 'day_cos', 'distance_log', 'distance_sqrt', 
-    #             'distance_squared', 'is_peak_hour', 'is_weekend', 'hour_to_peak']
+    # 4. Weather
+    has_precipitation = 1 if precip > 0 else 0
+    high_wind = 0 # Placeholder for API
+    
+    # 5. Market Interaction (Zimbabwe specific)
+    # Using 1.0 ton as baseline for API estimates
+    rate = mb.MARKET_RATES["logistics_heavy"]["per_ton_km"]
+    base_fee = mb.MARKET_RATES["logistics_heavy"]["minimum_load_fee"]
+    market_baseline = (distance * 1.0 * rate) + base_fee
+    market_diff_ratio = market_baseline / (distance + 0.1)
+    market_transit_baseline = (distance * mb.MARKET_RATES["ride_hailing"]["per_km"]) + mb.MARKET_RATES["ride_hailing"]["base_fare"]
+    
+    # 6. Dynamic Interactions
+    dist_x_peak = distance * is_peak_hour
+    dist_x_weekend = distance * is_weekend
+    
+    # Build feature array in V3 Order:
+    # ["distance", "hour", "day_of_week", "temperature", "is_peak_hour", "is_weekend", 
+    #  "distance_log", "distance_sqrt", "has_precipitation", "high_wind", 
+    #  "market_baseline", "market_diff_ratio", "market_transit_baseline", 
+    #  "dist_x_peak", "dist_x_weekend"]
+    
     features = [
-        distance,           # 0
-        hour,              # 1
-        day_of_week,       # 2
-        hour_sin,          # 3
-        hour_cos,          # 4
-        day_sin,           # 5
-        day_cos,           # 6
-        distance_log,      # 7
-        distance_sqrt,     # 8
-        distance_squared,  # 9
-        is_peak_hour,      # 10
-        is_weekend,        # 11
-        hour_to_peak,      # 12
+        distance, hour, day_of_week, temp,
+        is_peak_hour, is_weekend,
+        distance_log, distance_sqrt,
+        has_precipitation, high_wind,
+        market_baseline, market_diff_ratio, market_transit_baseline,
+        dist_x_peak, dist_x_weekend
     ]
     
     return np.array([features])
@@ -471,7 +481,7 @@ async def health():
     """Health check endpoint."""
     return {
         "status": "healthy",
-        "model": "v2_current",
+        "model": "v3_market_aligned",
         "features": len(FEATURES),
         "timestamp": datetime.now().isoformat(),
     }
@@ -482,7 +492,7 @@ async def model_info():
     """Get model information."""
     history = METADATA.get('history', {})
     return {
-        "version": "v2_current",
+        "version": "v3_market_aligned",
         "features": FEATURES,
         "feature_count": len(FEATURES),
         "training_r2": round(history.get('train', {}).get('r2', 0), 4),

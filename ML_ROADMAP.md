@@ -1,9 +1,9 @@
 # TakuraBid ML Pricing Model - Development Roadmap
 
 ## Current Status
-**Production Ready v2.1** - GradientBoosting model with 16 engineered features, R² = 0.111
-
-Currently deployed with real-time price suggestions integrated into the driver dashboard.
+**v3.0 Market Aligned** - GradientBoosting ensemble with 40+ features, integrating Zimbabwe logistics standards (Swift, Bolt, inDrive).
+R² (Test): 0.111 (Pre-Market Align) -> Training v3.1 now.
+Currently deployed with real-time price suggestions integrated into the driver and client dashboards.
 
 ## Completed Work
 
@@ -13,6 +13,7 @@ Currently deployed with real-time price suggestions integrated into the driver d
 - Baseline RandomForest model (R² = 0.0585)
 - Production v2 model using GradientBoosting (R² = 0.085)
 - **Production v2.1 model with Weather Alignment (R² = 0.111)**
+- **Market Benchmarking (Phase 4.1.5):** Integrated Zimbabwe-specific rates (Swift, Bolt, inDrive) into the pipeline.
 - Model serialization with joblib + JSON metadata
 - Comprehensive evaluation framework
 
@@ -54,19 +55,17 @@ Current model uses generic cab ride data. Need platform-specific features.
 **Expected Impact:** R² → 0.30-0.50 (+25% accuracy)  
 **Priority:** HIGH - Business-critical
 
-### 4.3 Feature Expansion (6-8 weeks)
-Scale from 13 to 40+ features through engineered combinations.
+### 4.3 Feature Expansion (IN PROGRESS)
+Scale from 13 to 40+ features through engineered combinations and market benchmarks.
 
 **New Feature Categories:**
-- Temporal patterns (hour, day, season, holidays)
-- Vehicle specifics (capacity ratio, type encoding)
-- Cargo attributes (density, fragility, hazmat surcharge)
-- Driver history (success rate, specialization bonus)
-- Market conditions (demand, competition, fuel index)
-- Business logic (client loyalty, urgency multipliers)
+- Temporal patterns (cyclic encoding, peak bins)
+- Market benchmarks (Swift-logistics, Bolt-transit baselines)
+- Interaction terms (dist_x_temp, dist_x_hour, etc.)
+- Advanced scaling (log, sqrt, cubed, inverse transforms)
 
-**Implementation:** Refactor `ml/data_pipeline.py`, modularize in `ml/features/` folder, add feature versioning.  
-**Expected Impact:** R² → 0.50-0.75
+**Implementation:** Refactor `ml/data_pipeline.py`, integrated `ml/market_benchmarks.py`.
+**Target Impact:** R² → 0.50-0.75
 ---
 
 ## Phase 5 - Advanced Modeling (6-8 weeks)

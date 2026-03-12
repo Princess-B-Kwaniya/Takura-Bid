@@ -28,6 +28,25 @@ from sklearn.ensemble import (
     GradientBoostingRegressor,
     VotingRegressor,
 )
+
+# Boosting libraries (optional imports)
+try:
+    import lightgbm as lgb
+    HAS_LIGHTGBM = True
+except ImportError:
+    HAS_LIGHTGBM = False
+
+try:
+    import xgboost as xgb
+    HAS_XGBOOST = True
+except ImportError:
+    HAS_XGBOOST = False
+
+try:
+    from catboost import CatBoostRegressor
+    HAS_CATBOOST = True
+except ImportError:
+    HAS_CATBOOST = False
 from sklearn.metrics import (
     mean_absolute_error,
     mean_squared_error,
@@ -88,6 +107,18 @@ class ModelTrainer:
             self.model = RandomForestRegressor(**params)
         elif model_type == "GradientBoostingRegressor":
             self.model = GradientBoostingRegressor(**params)
+        elif model_type == "LGBMRegressor":
+            if not HAS_LIGHTGBM:
+                raise ImportError("LightGBM not installed. Run: pip install lightgbm")
+            self.model = lgb.LGBMRegressor(**params)
+        elif model_type == "XGBRegressor":
+            if not HAS_XGBOOST:
+                raise ImportError("XGBoost not installed. Run: pip install xgboost")
+            self.model = xgb.XGBRegressor(**params)
+        elif model_type == "CatBoostRegressor":
+            if not HAS_CATBOOST:
+                raise ImportError("CatBoost not installed. Run: pip install catboost")
+            self.model = CatBoostRegressor(**params)
         elif model_type == "VotingRegressor":
             # Build sub-models
             estimators = [

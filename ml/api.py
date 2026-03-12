@@ -70,7 +70,7 @@ def load_model(version: str = "v2_current"):
 
 # Load on startup
 logger.info("Loading model...")
-MODEL, SCALER, METADATA = load_model("v3_market_aligned")
+MODEL, SCALER, METADATA = load_model("v3_optimized")
 FEATURES = METADATA.get("features", [])
 
 logger.info(f"Using {len(FEATURES)} features: {FEATURES}")
@@ -351,53 +351,39 @@ async def home():
 
 
 def engineer_features_from_request(request: PricingRequest) -> np.ndarray:
-    """Engineer features from API request to match v3_market_aligned features."""
+    """Engineer features from API request to match v3_optimized features (11 features)."""
     import market_benchmarks as mb
     
     hour = request.hour
     day_of_week = request.day_of_week
     distance = request.distance
     temp = request.temperature or 25.0
-    precip = request.precipitation or 0.0
     
-    # 1. Core
-    # features list order: ["distance", "hour", "day_of_week", "temperature", ...]
-    
-    # 2. Bins & Flags
-    is_peak_hour = 1 if ((hour >= 7 and hour <= 9) or (hour >= 16 and hour <= 19)) else 0
-    is_weekend = 1 if day_of_week >= 5 else 0
-    
-    # 3. Distance scales
+    # Distance scales
     distance_log = np.log1p(distance)
     distance_sqrt = np.sqrt(distance)
     
-    # 4. Weather
-    has_precipitation = 1 if precip > 0 else 0
-    high_wind = 0 # Placeholder for API
-    
-    # 5. Market Interaction (Zimbabwe specific)
-    # Using 1.0 ton as baseline for API estimates
+    # Market Interaction (Zimbabwe specific)
     rate = mb.MARKET_RATES["logistics_heavy"]["per_ton_km"]
     base_fee = mb.MARKET_RATES["logistics_heavy"]["minimum_load_fee"]
     market_baseline = (distance * 1.0 * rate) + base_fee
     market_diff_ratio = market_baseline / (distance + 0.1)
     market_transit_baseline = (distance * mb.MARKET_RATES["ride_hailing"]["per_km"]) + mb.MARKET_RATES["ride_hailing"]["base_fare"]
     
-    # 6. Dynamic Interactions
+    # Interactions
+    is_peak_hour = 1 if ((hour >= 7 and hour <= 9) or (hour >= 16 and hour <= 19)) else 0
+    is_weekend = 1 if day_of_week >= 5 else 0
     dist_x_peak = distance * is_peak_hour
     dist_x_weekend = distance * is_weekend
     
-    # Build feature array in V3 Order:
-    # ["distance", "hour", "day_of_week", "temperature", "is_peak_hour", "is_weekend", 
-    #  "distance_log", "distance_sqrt", "has_precipitation", "high_wind", 
-    #  "market_baseline", "market_diff_ratio", "market_transit_baseline", 
+    # Build feature array in V3.1 Order (11 features):
+    # ["distance", "hour", "day_of_week", "temperature",
+    #  "distance_log", "distance_sqrt",
+    #  "market_baseline", "market_diff_ratio", "market_transit_baseline",
     #  "dist_x_peak", "dist_x_weekend"]
-    
     features = [
         distance, hour, day_of_week, temp,
-        is_peak_hour, is_weekend,
         distance_log, distance_sqrt,
-        has_precipitation, high_wind,
         market_baseline, market_diff_ratio, market_transit_baseline,
         dist_x_peak, dist_x_weekend
     ]
@@ -481,7 +467,7 @@ async def health():
     """Health check endpoint."""
     return {
         "status": "healthy",
-        "model": "v3_market_aligned",
+        "model": "v3_optimized",
         "features": len(FEATURES),
         "timestamp": datetime.now().isoformat(),
     }
@@ -492,7 +478,7 @@ async def model_info():
     """Get model information."""
     history = METADATA.get('history', {})
     return {
-        "version": "v3_market_aligned",
+        "version": "v3_optimized",
         "features": FEATURES,
         "feature_count": len(FEATURES),
         "training_r2": round(history.get('train', {}).get('r2', 0), 4),

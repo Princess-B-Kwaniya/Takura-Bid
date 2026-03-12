@@ -177,6 +177,29 @@ MODEL_VERSIONS = {
         },
         "description": "Model aligned with Zimbabwe market benchmarks (Swift, Bolt, inDrive)",
     },
+    "v3_optimized": {
+        "name": "Optimized LightGBM",
+        "model_type": "LGBMRegressor",
+        "version": "v3.1",
+        "features": [
+            "distance", "hour", "day_of_week", "temperature", 
+            "distance_log", "distance_sqrt", 
+            "market_baseline", "market_diff_ratio", "market_transit_baseline",
+            "dist_x_peak", "dist_x_weekend"
+        ],
+        "model_params": {
+            "n_estimators": 445,
+            "max_depth": 5,
+            "learning_rate": 0.0321687582436235,
+            "num_leaves": 27,
+            "feature_fraction": 0.7780505351713435,
+            "bagging_fraction": 0.8243973586451594,
+            "bagging_freq": 3,
+            "random_state": 42,
+            "verbose": -1
+        },
+        "description": "Hyperparameter tuned LightGBM with Optuna and pruned features",
+    },
     "v3_production": {
         "name": "Ensemble (Production Target)",
         "model_type": "VotingRegressor",
@@ -382,7 +405,7 @@ PHASE 6 - PRODUCTION & MONITORING (Ongoing)
 # ============================================================================
 def get_current_version() -> str:
     """Get the current active model version."""
-    return "v3_market_aligned"
+    return "v3_optimized"
 
 
 def get_model_config(version: str = None) -> Dict[str, Any]:

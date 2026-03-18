@@ -9,6 +9,9 @@ export default function PostLoadPage() {
   const router = useRouter()
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState('')
+  const [suggestedPrice, setSuggestedPrice] = useState<number | null>(null)
+  const [priceLoading, setPriceLoading] = useState(false)
+  const [priceRange, setPriceRange] = useState<{ min: number; max: number } | null>(null)
   const [formData, setFormData] = useState({
     cargoType: '',
     weight: '',
@@ -26,6 +29,41 @@ export default function PostLoadPage() {
   const distance = formData.origin && formData.destination
     ? getDistance(formData.origin, formData.destination)
     : null
+
+  // Fetch AI price suggestion when route + date are available
+  useEffect(() => {
+    if (!distance || !formData.pickupDate) {
+      setSuggestedPrice(null)
+      setPriceRange(null)
+      return
+    }
+
+    const controller = new AbortController()
+    setPriceLoading(true)
+
+    fetch('/api/pricing/estimate', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        distance_km: distance,
+        pickup_datetime: formData.pickupDate + 'T10:00:00',
+      }),
+      signal: controller.signal,
+    })
+      .then(res => res.ok ? res.json() : null)
+      .then(data => {
+        if (data?.suggested_bid) {
+          setSuggestedPrice(data.suggested_bid)
+          if (data.range) setPriceRange(data.range)
+        }
+      })
+      .catch(err => {
+        if (err.name !== 'AbortError') console.error('Price suggestion failed:', err)
+      })
+      .finally(() => setPriceLoading(false))
+
+    return () => controller.abort()
+  }, [distance, formData.pickupDate])
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     setFormData({ ...formData, [e.target.name]: e.target.value })
@@ -191,6 +229,48 @@ export default function PostLoadPage() {
                         className="input-field"
                         placeholder="e.g. 850"
                       />
+                      {/* AI Budget Suggestion */}
+                      {priceLoading && (
+                        <div className="mt-2 flex items-center text-sm text-gray-500">
+                          <svg className="animate-spin h-4 w-4 mr-2 text-purple-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
+                          </svg>
+                          Getting AI price suggestion...
+                        </div>
+                      )}
+                      {suggestedPrice && !priceLoading && (
+                        <div className="mt-3 p-3 bg-gradient-to-r from-emerald-50 to-green-50 border border-emerald-200 rounded-lg">
+                          <div className="flex items-start justify-between">
+                            <div>
+                              <div className="flex items-center space-x-1.5">
+                                <svg className="w-4 h-4 text-emerald-600" fill="currentColor" viewBox="0 0 20 20">
+                                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                                </svg>
+                                <span className="text-sm font-semibold text-emerald-800">AI Suggested Budget</span>
+                              </div>
+                              <p className="text-xl font-bold text-emerald-700 mt-1">
+                                ${suggestedPrice.toFixed(2)}
+                              </p>
+                              {priceRange && (
+                                <p className="text-xs text-emerald-600 mt-0.5">
+                                  Market range: ${priceRange.min.toFixed(0)} – ${priceRange.max.toFixed(0)}
+                                </p>
+                              )}
+                            </div>
+                            <button
+                              type="button"
+                              onClick={() => setFormData(prev => ({ ...prev, budget: suggestedPrice.toFixed(2) }))}
+                              className="px-3 py-1.5 text-xs font-semibold text-white bg-emerald-600 rounded-md hover:bg-emerald-700 transition-colors shadow-sm"
+                            >
+                              Use
+                            </button>
+                          </div>
+                          <p className="text-[10px] text-emerald-500 mt-1.5 leading-tight">
+                            Based on Zimbabwe market rates (Swift, Bolt standards) for {distance}km
+                          </p>
+                        </div>
+                      )}
                     </div>
                   </div>
                 </div>
@@ -352,8 +432,8 @@ export default function PostLoadPage() {
                           type="button"
                           onClick={() => toggleRequirement(req)}
                           className={`px-3 py-1.5 text-sm rounded-full border transition-all ${formData.requirements.includes(req)
-                              ? 'bg-purple-600 text-white border-purple-600'
-                              : 'bg-white text-gray-700 border-gray-300 hover:border-purple-400'
+                            ? 'bg-purple-600 text-white border-purple-600'
+                            : 'bg-white text-gray-700 border-gray-300 hover:border-purple-400'
                             }`}
                         >
                           {formData.requirements.includes(req) && (
